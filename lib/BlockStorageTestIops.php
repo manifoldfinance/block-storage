@@ -251,7 +251,7 @@ class BlockStorageTestIops extends BlockStorageTest {
     // 0/100, 4k IOPS => used for steady state verification
     $ssMetrics = array();
     $workloads = array('100/0', '95/5', '65/35', '50/50', '35/65', '5/95', '0/100');
-    $blockSizes = array('1m', '128k', '64k', '32k', '16k', '8k', '4k');
+    $blockSizes = array('1m', '128k', '64k', '32k', '16k', '8k', '4k', '1k');
     // $workloads = array('100/0', '0/100');
     // $blockSizes = array('4k', '512b');
     for($x=1; $x<=$max; $x++) {
@@ -278,7 +278,7 @@ class BlockStorageTestIops extends BlockStorageTest {
             $ssMetrics[$x] = $iops;
           }
           // check for steady state
-          if ($x >= 5 && $rw == '0/100') {
+          if ($x >= 5 && $rw == '0/100' && $bs == '1k') {
             $metrics = array();
             for($i=4; $i>=0; $i--) $metrics[$x-$i] = $ssMetrics[$x-$i];
             BlockStorageTest::printMsg(sprintf('Test round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using 4k write IOPS metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);

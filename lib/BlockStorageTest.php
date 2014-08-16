@@ -127,7 +127,7 @@ abstract class BlockStorageTest {
     else if ($targets) {
       $cmd = $this->options['fio'];
       $options = array_merge($this->options['fio_options'], $options);
-      if (!isset($options['threads'])) $options['threads'] = count($targets) * $this->options['threads'];
+      if (!isset($options['numjobs'])) $options['numjobs'] = count($targets) * $this->options['threads'];
       if (!isset($options['iodepth'])) $options['iodepth'] = $this->options['oio_per_thread'];
       if (!isset($options['filename'])) {
         $filename = '';

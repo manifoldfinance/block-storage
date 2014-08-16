@@ -294,6 +294,8 @@ ARGUMENTS:
                             this parameter signifies the number of threads per 
                             device. Thus total threads is # of targets * 
                             'threads'. Latency tests are fixed at 1 thread
+                            This parameter is used to define the fio --numjobs
+                            argument where --numjobs = [threads]*[# targets]
 
 --timeout                   Max time to permit for testing in seconds. Default 
                             is 24 hours (86400 seconds)
