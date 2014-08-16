@@ -61,13 +61,16 @@ variables (e.g. `export bm_param_test=iops`)
                             override default fio settings 
                             (e.g. fio_ioengine=sync)
                             
-* font                      The font to use in reports and graphs. Default is 
-                            "Arial"
+* font                      The font-family css value to use in reports and 
+                            graphs. Default is 'Source Sans Pro'
                             
 * font_size                 The base font size pt to use in reports and graphs. 
                             All text will be relative to this size (i.e. 
-                            smaller, larger). Default is 10. Graphs use this 
+                            smaller, larger). Default is 11. Graphs use this 
                             value + 4 (i.e. default 14)
+                            
+* font_url                  URL for the font referenced above. Default is 
+                            http://fonts.googleapis.com/css?family=Source+Sans+Pro
                             
 * highcharts_js_url         URL to highcharts.js. Highcharts is used to render
                             3D charts in reports. Use 'no3dcharts' to disable 

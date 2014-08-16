@@ -134,7 +134,7 @@ abstract class BlockStorageTest {
         foreach($targets as $target) $filename .= ($filename ? ':' : '') . (BlockStorageTest::getDevice($target) == $target ? $target : $target . '/'. BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME);
         $options['filename'] = $filename; 
       }
-      $options['group_reporting'] = TRUE;
+      $options['group_reporting'] = FALSE;
       $options['output-format'] = 'json';
       if (!isset($options['name'])) $options['name'] = sprintf('%s-%d', $step, isset($this->fio[$step]) ? count($this->fio[$step]) + 1 : 1);
       // determine size
@@ -829,11 +829,12 @@ abstract class BlockStorageTest {
       'fio_options' => array(
         'direct' => TRUE,
         'ioengine' => 'libaio',
-        'refill_buffers' => TRUE,
+        'refill_buffers' => FALSE,
         'scramble_buffers' => TRUE
       ),
-      'font' => 'Arial',
-      'font_size' => 10,
+      'font' => 'Source Sans Pro',
+      'font_size' => 11,
+      'font_url' => 'http://fonts.googleapis.com/css?family=Source+Sans+Pro',
       'highcharts_js_url' => 'http://code.highcharts.com/highcharts.js',
       'highcharts3d_js_url' => 'http://code.highcharts.com/highcharts-3d.js',
       'jquery_url' => 'http://code.jquery.com/jquery-2.1.0.min.js',
