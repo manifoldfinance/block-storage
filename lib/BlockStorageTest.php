@@ -127,7 +127,9 @@ abstract class BlockStorageTest {
     else if ($targets) {
       $cmd = $this->options['fio'];
       $options = array_merge($this->options['fio_options'], $options);
-      if (!isset($options['numjobs'])) $options['numjobs'] = count($targets) * $this->options['threads'];
+      if (!isset($options['numjobs'])) {
+        $options['numjobs'] = count($targets) * ($this->options['threads'] < $this->options['threads_per_target_max'] ? $this->options['threads'] : $this->options['threads_per_target_max']);
+      }
       if (!isset($options['iodepth'])) $options['iodepth'] = $this->options['oio_per_thread'];
       if (!isset($options['filename'])) {
         $filename = '';
@@ -851,7 +853,8 @@ abstract class BlockStorageTest {
       'ss_rounds' => 25,
       'ss_verification' => 10,
       'test' => array('iops'),
-      'threads' => '{cpus}',
+      'threads' => '{cpus}/2',
+      'threads_per_target_max' => 4,
       'timeout' => 86400
     );
     $opts = array(
@@ -892,15 +895,17 @@ abstract class BlockStorageTest {
       'output:',
       'precondition_passes:',
       'secureerase_pswd:',
+      'skip_blocksize:',
       'ss_rounds:',
       'ss_verification:',
       'target:',
       'test:',
       'threads:',
+      'threads_per_target_max:',
       'timeout:',
       'v' => 'verbose'
     );
-    $options = BlockStorageTest::parseArgs($opts, array('target', 'test'));
+    $options = BlockStorageTest::parseArgs($opts, array('skip_blocksize', 'target', 'test'));
     // explicit fio command
     foreach($defaults as $key => $val) {
       if (!isset($options[$key])) $options[$key] = $val;
@@ -934,10 +939,11 @@ abstract class BlockStorageTest {
     if (isset($options['threads']) && preg_match('/{cpus}/', $options['threads'])) {
       $options['threads'] = str_replace(' ', '', str_replace('{cpus}', BlockStorageTest::getCpuCount(), $options['threads']));
       // expression
-      if (preg_match('/[\*\+\-]/', $options['threads'])) {
+      if (preg_match('/[\*\+\-\/]/', $options['threads'])) {
         eval(sprintf('$options["threads"]=%s;', $options['threads']));
       }
       $options['threads'] *= 1;
+      if ($options['threads'] <= 0) $options['threads'] = 1;
       
       // adjust for number of targets
       if (isset($options['target']) && count($options['target']) > 1) {
@@ -1414,11 +1420,13 @@ abstract class BlockStorageTest {
       'oio_per_thread' => array('min' => 1, 'max' => 256),
       'output' => array('write' => TRUE),
       'precondition_passes' => array('min' => 1, 'max' => 5),
+      'skip_blocksize' => array('option' => array('1m', '128k', '64k', '32k', '16k', '8k', '512b'));
       'ss_rounds' => array('min' => 5, 'max' => 100),
       'ss_verification' => array('min' => 1, 'max' => 100),
       'target' => array('required' => TRUE, 'write' => TRUE),
       'test' => array('option' => array('iops', 'throughput', 'latency', 'wsat', 'hir', 'xsr', 'ecw', 'dirth'), 'required' => TRUE),
       'threads' => array('min' => 1),
+      'threads_per_target_max' => array('min' => 1),
       'timeout' => array('min' => 3600)
     );
     if (!($valid = BlockStorageTest::validateOptions($options, $validate))) {

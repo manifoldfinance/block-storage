@@ -193,6 +193,10 @@ ARGUMENTS:
                             test parameter. If it is not supplied, ATA secure
                             erase will not be attempted. If this parameter is 
                             not specified, the hdparm dependent will be removed
+                            
+--skip_blocksize            1 or more block sizes to skip during testing. This 
+                            argument may be repeated. Valid options are:
+                            1m, 128k, 64k, 32k, 16k, 8k, 512b
 
 --ss_rounds                 The maximum number of test cycle iterations to 
                             allow for steady state verification. Default is 
@@ -285,7 +289,7 @@ ARGUMENTS:
 --threads                   The number of threads to use for the test cycle. 
                             Per the SNIA test specification, this is a user 
                             definable parameter. The default value for this 
-                            parameter is the number of CPU cores. This 
+                            parameter is half the number of CPU cores. This 
                             parameter may contain the token {cpus} which will 
                             be replaced with the number of CPU cores present. 
                             It may also contain a mathematical expression in 
@@ -295,7 +299,10 @@ ARGUMENTS:
                             device. Thus total threads is # of targets * 
                             'threads'. Latency tests are fixed at 1 thread
                             This parameter is used to define the fio --numjobs
-                            argument where --numjobs = [threads]*[# targets]
+                            argument
+                            
+--threads_per_target_max    The maximum number of threads per target - default
+                            is 4
 
 --timeout                   Max time to permit for testing in seconds. Default 
                             is 24 hours (86400 seconds)
