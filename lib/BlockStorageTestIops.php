@@ -198,10 +198,10 @@ class BlockStorageTestIops extends BlockStorageTest {
     return array(
       'AR Segments' => 'N/A',
       'Pre Condition 1' => $this->wipc ? 'SEQ 128K W' : 'None',
-      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TD %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']) : 'N/A',
+      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']) : 'N/A',
       '&nbsp;&nbsp;Duration' => $this->wipc ? sprintf('%dX %s Capacity%s', $this->options['precondition_passes'], $this->deviceTargets ? 'Device' : 'Volume', $this->options['active_range'] < 100 ? ' (' . $this->options['active_range'] . '% AR)' : '') : 'N/A',
       'Pre Condition 2' => 'IOPS Loop',
-      '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TD %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']),
+      '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']),
       '&nbsp;&nbsp;SS Rouds' => $this->wdpc !== NULL ? sprintf('%d - %d', $this->wdpcComplete - 4, $this->wdpcComplete) : 'N/A',
       'Notes' => $this->wdpc === FALSE ? sprintf('SS NOT ACHIEVED', $this->wdpcComplete) : ''
     );
@@ -228,7 +228,7 @@ class BlockStorageTestIops extends BlockStorageTest {
       'Test Stimulus 1' => 'IOPS Loop',
       '&nbsp;&nbsp;RW Mix' => 'Outer Loop',
       '&nbsp;&nbsp;Block Sizes' => 'Inner Loop',
-      '&nbsp;&nbsp;TOIO - TC/QD' => sprintf('TD %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']),
+      '&nbsp;&nbsp;TOIO - TC/QD' => sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']),
       '&nbsp;&nbsp;Steady State' => $this->wdpc !== NULL ? sprintf('%d - %d%s', $this->wdpcComplete - 4, $this->wdpcComplete, $this->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A',
       'Test Stimulus 2' => 'N/A',
       '&nbsp;&nbsp;TOIO - TC/QD ' => 'N/A',

@@ -215,10 +215,10 @@ class BlockStorageTestThroughput extends BlockStorageTest {
     return array(
       'AR Segments' => 'N/A',
       'Pre Condition 1' => $this->wipc ? 'SEQ 128K W' : 'None',
-      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TD %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']) : 'N/A',
+      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']) : 'N/A',
       '&nbsp;&nbsp;Duration' => $this->wipc ? sprintf('%dX %s Capacity%s', $this->options['precondition_passes'], $this->deviceTargets ? 'Device' : 'Volume', $this->options['active_range'] < 100 ? ' (' . $this->options['active_range'] . '% AR)' : '') : 'N/A',
       'Pre Condition 2' => 'SEQ 128K W',
-      '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TD %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']),
+      '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']),
       '&nbsp;&nbsp;SS Rouds' => isset($this->subtests['128k']) && $this->subtests['128k']->wdpc !== NULL ? sprintf('%d - %d', $this->subtests['128k']->wdpcComplete - 4, $this->subtests['128k']->wdpcComplete) : 'N/A',
       'Notes' => isset($this->subtests['128k']) && $this->subtests['128k']->wdpc === FALSE ? sprintf('SS NOT ACHIEVED', $this->subtests['128k']->wdpcComplete) : ''
     );
@@ -277,13 +277,13 @@ class BlockStorageTestThroughput extends BlockStorageTest {
       $params['Test Stimulus 1'] = 'SEQ 1024KiB';
       $params['&nbsp;&nbsp;RW Mix'] = '100:0 / 0:100';
       $params['&nbsp;&nbsp;Block Sizes'] = 'SEQ 1024KiB';
-      $params['&nbsp;&nbsp;TOIO - TC/QD'] = sprintf('TD %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']);
+      $params['&nbsp;&nbsp;TOIO - TC/QD'] = sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']);
       $params['&nbsp;&nbsp;Steady State'] = $this->subtests['1024k']->wdpc !== NULL ? sprintf('%d - %d%s', $this->subtests['1024k']->wdpcComplete - 4, $this->subtests['1024k']->wdpcComplete, $this->subtests['1024k']->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A';
     }
     
     if (isset($this->subtests['128k'])) {
       $params['Test Stimulus 2'] = 'SEQ 128KiB';
-      $params['&nbsp;&nbsp;TOIO - TC/QD'] = sprintf('TD %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']);
+      $params['&nbsp;&nbsp;TOIO - TC/QD'] = sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']);
       $params['&nbsp;&nbsp;Steady State'] = $this->subtests['128k']->wdpc !== NULL ? sprintf('%d - %d%s', $this->subtests['128k']->wdpcComplete - 4, $this->subtests['128k']->wdpcComplete, $this->subtests['128k']->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A';
     }
     
