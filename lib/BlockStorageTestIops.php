@@ -6,8 +6,9 @@ class BlockStorageTestIops extends BlockStorageTest {
   /**
    * Constructor is protected to implement the singleton pattern using 
    * the BlockStorageTest::getTestController static method
+   * @param array $options the test options
    */
-  protected function BlockStorageTestIops() {}
+  protected function BlockStorageTestIops($options) {}
     
   /**
    * this sub-class method should return the content associated with $section 
@@ -250,17 +251,10 @@ class BlockStorageTestIops extends BlockStorageTest {
     $max = $this->options['ss_rounds'];
     // 0/100, 4k IOPS => used for steady state verification
     $ssMetrics = array();
-    $workloads = array('100/0', '95/5', '65/35', '50/50', '35/65', '5/95', '0/100');
-    $blockSizes = array();
-    foreach(array('1m', '128k', '64k', '32k', '16k', '8k', '4k', '512b') as $bs) {
-      if (!isset($this->options['skip_blocksize']) || !in_array($bs, $this->options['skip_blocksize'])) {
-        $blockSizes[] = $bs;
-        $lastBlockSize = $bs;
-      }
-    }
+    $blockSizes = $this->filterBlocksizes(array('1m', '128k', '64k', '32k', '16k', '8k', '4k', '512b'));
+    $lastBlockSize = $blockSizes[count($blockSizes) - 1];
+    $workloads = $this->filterWorkloads(array('100/0', '95/5', '65/35', '50/50', '35/65', '5/95', '0/100'));
     
-    // $workloads = array('100/0', '0/100');
-    // $blockSizes = array('4k', '512b');
     for($x=1; $x<=$max; $x++) {
       foreach($workloads as $rw) {
         $pieces = explode('/', $rw);
@@ -270,8 +264,7 @@ class BlockStorageTestIops extends BlockStorageTest {
         foreach($blockSizes as $bs) {
           $name = sprintf('x%d-%s-%s-rand', $x, str_replace('/', '_', $rw), $bs);
           BlockStorageTest::printMsg(sprintf('Executing random IO test iteration for round %d of %d, rw ratio %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
-          if ($fio = $this->fio(array('blocksize' => $bs, 'name' => $name, 'runtime' => 60, 'rw' => 'randrw', 'rwmixread' => $rwmixread, 'time_based' => FALSE), 'wdpc')) {
-          // if ($fio = $this->fio(array('blocksize' => $bs, 'name' => $name, 'runtime' => 10, 'rw' => 'randrw', 'rwmixread' => $rwmixread, 'time_based' => FALSE), 'wdpc')) {
+          if ($fio = $this->fio(array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'rw' => 'randrw', 'rwmixread' => $rwmixread, 'time_based' => FALSE), 'wdpc')) {
             BlockStorageTest::printMsg(sprintf('Random IO test iteration for round %d of %d, rw ratio %s and block size %s was successful', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
             $results = $this->fio['wdpc'][count($this->fio['wdpc']) - 1];
           }
@@ -290,10 +283,10 @@ class BlockStorageTestIops extends BlockStorageTest {
             for($i=4; $i>=0; $i--) $metrics[$x-$i] = $ssMetrics[$x-$i];
             BlockStorageTest::printMsg(sprintf('Test round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using 4k write IOPS metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
             if ($this->isSteadyState($metrics, $x)) {
-              BlockStorageTest::printMsg(sprintf('Steady state achieved - testing will stop', $iops), $this->verbose, __FILE__, __LINE__);
+              BlockStorageTest::printMsg(sprintf('Steady state achieved - testing will stop'), $this->verbose, __FILE__, __LINE__);
               $status = TRUE;
             }
-            else BlockStorageTest::printMsg(sprintf('Steady state NOT achieved', $iops), $this->verbose, __FILE__, __LINE__);
+            else BlockStorageTest::printMsg(sprintf('Steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
             
             // end of the line => last test round and steady state not achieved
             if ($x == $max && $status === NULL) $status = FALSE;

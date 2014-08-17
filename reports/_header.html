@@ -9,13 +9,11 @@
 	<script src="<?php echo $options['highcharts_js_url'] ?>"></script>
 	<script src="<?php echo $options['highcharts3d_js_url'] ?>"></script>
   <?php } ?>
-	<?php if ($options['font_url']) { ?>
-	<link href='<?php echo $options['font_url'] ?>' rel='stylesheet' type='text/css'>
-	<?php } ?>
+	<link href='font.css' rel='stylesheet' type='text/css'>
   <style type="text/css">
   <!--
   body {
-    font-family: <?php echo $options['font'] ?>;
+    font-family: rfont;
     font-size: <?php echo $options['font_size'] ?>pt;
     margin: 0in;
     padding: 0.1in;

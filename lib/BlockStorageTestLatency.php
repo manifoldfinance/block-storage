@@ -6,15 +6,16 @@ class BlockStorageTestLatency extends BlockStorageTest {
   /**
    * Constructor is protected to implement the singleton pattern using 
    * the BlockStorageTest::getTestController static method
+   * @param array $options the test options
    */
-  protected function BlockStorageTestLatency() {}
+  protected function BlockStorageTestLatency($options) {}
     
   /**
    * this sub-class method should return the content associated with $section 
    * using the $jobs given (or all jobs in $this->fio['wdpc']). Return value 
    * should be HTML that can be imbedded into the report. The HTML may include 
    * an image reference without any directory path (e.g. <img src="iops.png>")
-   * return NULL on error
+   * returns NULL on error, FALSE if not content required
    * @param string $section the section identifier provided by 
    * $this->getReportSections()
    * @param array $jobs all fio job results occuring within the steady state 

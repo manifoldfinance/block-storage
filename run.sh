@@ -34,14 +34,13 @@ ARGUMENTS:
                             the SNIA test specification. Use this parameter to 
                             override default fio settings 
                             (e.g. fio_ioengine=sync)
-                            
---font                      The font to use in reports and graphs. Default is 
-                            "Arial"
 
 --font_size                 The base font size pt to use in reports and graphs. 
                             All text will be relative to this size (i.e. 
-                            smaller, larger). Default is 10. Graphs use this 
-                            value + 4 (i.e. default 14)
+                            smaller, larger). Default is 9. Graphs use this 
+                            value + 4 (i.e. default 13). Open Sans is included
+                            with this software. To change this, simply replace
+                            the reports/font.ttf file with your desired font
 
 --help/-h                   Print help and exit
 
@@ -194,9 +193,13 @@ ARGUMENTS:
                             erase will not be attempted. If this parameter is 
                             not specified, the hdparm dependent will be removed
                             
---skip_blocksize            1 or more block sizes to skip during testing. This 
-                            argument may be repeated. Valid options are:
+--skip_blocksize            block sizes to skip during testing. This argument 
+                            may be repeated. Valid options are:
                             1m, 128k, 64k, 32k, 16k, 8k, 512b
+
+--skip_workload             workloads to skip during testing. This argument may
+                            be repeated. Valid options are:
+                            100/0, 95/5, 65/35, 50/50, 35/65, 5/95
 
 --ss_rounds                 The maximum number of test cycle iterations to 
                             allow for steady state verification. Default is 
@@ -289,7 +292,7 @@ ARGUMENTS:
 --threads                   The number of threads to use for the test cycle. 
                             Per the SNIA test specification, this is a user 
                             definable parameter. The default value for this 
-                            parameter is half the number of CPU cores. This 
+                            parameter is the number of CPU cores. This 
                             parameter may contain the token {cpus} which will 
                             be replaced with the number of CPU cores present. 
                             It may also contain a mathematical expression in 
@@ -309,6 +312,10 @@ ARGUMENTS:
 
 --verbose/-v                Show verbose output - warning: this may produce a 
                             lot of output
+                            
+--wd_test_duration          The test duration for workload dependent test 
+                            iterations in seconds. Default is 60 per the SNIA 
+                            test specification
                             
                             
 TEST ARTIFACTS
@@ -330,8 +337,10 @@ identifiers - e.g. report-iops.json):
                      number (1-25+), [rw] is the read/write ratio (separated by 
                      underscore) and [bs] is block size. Jobs that fall within
                      the steady state measurement window will have the suffix 
-                     '-ssmw' (e.g. x5-0_100-4k-rand-ssmw). there may be up to 8
-                     fio-[test].json corresponding with each of the tests
+                     '-ssmw' (e.g. x5-0_100-4k-rand-ssmw). there may be up to 
+                     10 fio-[test].json corresponding with each of the tests 
+                     and 2 files for throughput: test-throughput-128k.json and
+                     test-throughput-1024k.json
   report.zip         HTML test report (see open index.html). The report design
                      and layout is based on the SNIA test specification. In 
                      addition, this archive contains source gnuplot scripts and 

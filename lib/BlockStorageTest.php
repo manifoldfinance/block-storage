@@ -54,9 +54,14 @@ abstract class BlockStorageTest {
   protected $ssData = array();
   
   /**
+   * used to store sub-tests used for report generation
+   */
+  protected $subtests = array();
+  
+  /**
    * the test identifier for the instantiated controller
    */
-  private $test;
+  protected $test;
   
   /**
    * used for determining whether or not to render verbose output
@@ -93,7 +98,35 @@ abstract class BlockStorageTest {
    * successful
    */
   protected $wipc = FALSE;
-   
+  
+  
+  
+  /**
+   * removes any skip_blocksize arguments from $blocksizes
+   * @param array $blocksizes the blocksizes to filter
+   * @return array
+   */
+  protected function filterBlocksizes($blocksizes) {
+    $nblocksizes = array();
+    foreach($blocksizes as $bs) {
+      if (!isset($this->options['skip_blocksize']) || !in_array($bs, $this->options['skip_blocksize'])) $nblocksizes[] = $bs;
+    }
+    return $nblocksizes;
+  }
+  
+  
+  /**
+   * removes any skip_workload arguments from $workloads
+   * @param array $workloads the workloads to filter
+   * @return array
+   */
+  protected function filterWorkloads($workloads) {
+    $nworkloads = array();
+    foreach($workloads as $rw) {
+      if (!isset($this->options['skip_workload']) || !in_array($rw, $this->options['skip_workload'])) $nworkloads[] = $rw;
+    }
+    return $nworkloads;
+  }
   
   /**
    * Runs fio based on the runtime parameters and $options specified. If 
@@ -128,7 +161,7 @@ abstract class BlockStorageTest {
       $cmd = $this->options['fio'];
       $options = array_merge($this->options['fio_options'], $options);
       if (!isset($options['numjobs'])) {
-        $options['numjobs'] = count($targets) * ($this->options['threads'] < $this->options['threads_per_target_max'] ? $this->options['threads'] : $this->options['threads_per_target_max']);
+        $options['numjobs'] = count($targets) * $this->options['threads'];
       }
       if (!isset($options['iodepth'])) $options['iodepth'] = $this->options['oio_per_thread'];
       if (!isset($options['filename'])) {
@@ -248,9 +281,10 @@ abstract class BlockStorageTest {
    * otherwise
    * @param string $dir optional directory where archive should be generated 
    * in. If not specified, --output will be used
+   * @param string $suffix optional file name suffix
    * @return boolean
    */
-  public function generateJson($dir=NULL) {
+  public function generateJson($dir=NULL, $suffix=NULL) {
     if (isset($this->options['nojson']) && $this->options['nojson']) return FALSE;
     
     $generated = FALSE;
@@ -273,7 +307,7 @@ abstract class BlockStorageTest {
         }
       }
       if ($json) {
-        $file = sprintf('%s/fio-%s.json', $dir, $this->test);
+        $file = sprintf('%s/fio-%s%s.json', $dir, $this->test, $suffix ? '-' . $suffix : '');
         if ($fp = fopen($file, 'w')) {
           fwrite($fp, json_encode($json));
           fclose($fp);
@@ -323,8 +357,10 @@ abstract class BlockStorageTest {
    * or xMax are specified, but not xTics, xTics defaults to 8
    * @param boolean $html whether or not to return the html <img element or just
    * the name of the file
+   * @param boolean $bar whether or not to render the chart as a bar chart
+   * @return string
    */
-  protected final function generateLineChart($dir, $section, $coords, $xlabel=NULL, $ylabel=NULL, $title=NULL, $settings=NULL, $html=TRUE) {
+  protected final function generateLineChart($dir, $section, $coords, $xlabel=NULL, $ylabel=NULL, $title=NULL, $settings=NULL, $html=TRUE, $bar=FALSE) {
     BlockStorageTest::printMsg(sprintf('Generating line chart in %s for test %s and section %s with %d coords', $dir, $this->test, $section, count($coords)), $this->verbose, __FILE__, __LINE__);
     
     $chart = NULL;
@@ -404,7 +440,7 @@ abstract class BlockStorageTest {
       
       fwrite($fp, sprintf("#!%s\n", trim(shell_exec('which gnuplot'))));
       fwrite($fp, "reset\n");
-      fwrite($fp, sprintf("set terminal svg dashed size 1024,%d font '%s,%d'\n", isset($settings['height']) ? $settings['height'] : 600, $this->options['font'], $this->options['font_size']+4));
+      fwrite($fp, sprintf("set terminal svg dashed size 1024,%d fontfile 'font-svg.css' font 'rfont,%d'\n", isset($settings['height']) ? $settings['height'] : 600, $this->options['font_size']+4));
       // custom settings
       if (is_array($settings)) {
         foreach($settings as $key => $setting) {
@@ -415,8 +451,8 @@ abstract class BlockStorageTest {
       }
       fwrite($fp, "set autoscale keepfix\n");
       fwrite($fp, "set decimal locale\n");
-      fwrite($fp, "set format y \"%'g\"\n");
-      fwrite($fp, "set format x \"%'g\"\n");
+      fwrite($fp, "set format y \"%'10.0f\"\n");
+      fwrite($fp, "set format x \"%'10.0f\"\n");
       if ($xlabel) fwrite($fp, sprintf("set xlabel \"%s\"\n", $xlabel));
       fwrite($fp, sprintf("set xrange [%d:%d]\n", $xMin, $xMax));
       if (isset($settings['xLogscale'])) fwrite($fp, "set logscale x\n");
@@ -446,7 +482,7 @@ abstract class BlockStorageTest {
       fwrite($fp, sprintf("plot \"%s\"", basename($dfile)));
       $colorPtr = 1;
       foreach(array_keys($coords) as $i => $key) {
-        fwrite($fp, sprintf("%s u %d:%d t \"%s\" ls %d", $i > 0 ? ", \\\n\"\"" : '', ($i*2)+1, ($i*2)+2, $key, $colorPtr));
+        fwrite($fp, sprintf("%s u %d:%d t \"%s\" ls %d%s", $i > 0 ? ", \\\n\"\"" : '', ($i*2)+1, ($i*2)+2, $key, $colorPtr, $bar ? ' w boxes' : ''));
         $colorPtr++;
         if ($colorPtr > count($colors)) $colorPtr = 1;
       }
@@ -463,7 +499,18 @@ abstract class BlockStorageTest {
       }
       else {
         BlockStorageTest::printMsg(sprintf('Generated line chart %s successfully', $img), $this->verbose, __FILE__, __LINE__);
-        
+        // attempt to convert to PNG using wkhtmltoimage
+        if (BlockStorageTest::wkhtmltopdfInstalled()) {
+          $cmd = sprintf('wkhtmltoimage %s %s >/dev/null 2>&1', $img, $png = str_replace('.svg', '.png', $img));
+          $ecode = trim(exec($cmd));
+          if ($ecode > 0 || !file_exists($png) || !filesize($png)) BlockStorageTest::printMsg(sprintf('Unable to convert SVG image %s to PNG', basename($img)), $this->verbose, __FILE__, __LINE__, TRUE);
+          else {
+            exec(sprintf('rm -f %s', $img));
+            BlockStorageTest::printMsg(sprintf('SVG image %s converted to PNG successfully - PNG will be used in report', basename($img)), $this->verbose, __FILE__, __LINE__);
+            $img = $png;
+          }
+        }
+        // return full image tag
         if ($html) $chart = sprintf('<img alt="%s" class="plot" src="%s" />', $this->getSubtitle($section), basename($img));
         else $chart = basename($img);
       }
@@ -508,7 +555,22 @@ abstract class BlockStorageTest {
       fwrite($fp, ob_get_contents());
       ob_end_clean();
       
+      // custom report controllers
+      foreach(array_keys($controllers) as $n) {
+        if (count($controllers[$n]->subtests)) {
+          BlockStorageTest::printMsg(sprintf('Replacing %s test object with %d subtests', $controllers[$n]->test, count($controllers[$n]->subtests)), $verbose, __FILE__, __LINE__);
+          foreach(array_keys($controllers[$n]->subtests) as $i) {
+            $controllers[count($controllers) - 1] = $controllers[$n]->subtests[$i];
+          }
+          unset($controllers[$n]);
+        }
+      }
+      
       BlockStorageTest::printMsg(sprintf('Initiating report creation using temporary directory %s', $tdir), $verbose, __FILE__, __LINE__);
+      // copy font files
+      exec(sprintf('cp %s/font-svg.css %s/', $reportsDir, $tdir));
+      exec(sprintf('cp %s/font.css %s/', $reportsDir, $tdir));
+      exec(sprintf('cp %s/font.ttf %s/', $reportsDir, $tdir));
       
       foreach(array_keys($controllers) as $n) {
         if (count($controllers[$n]->fio) && $controllers[$n]->wdpcComplete && $controllers[$n]->wdpcIntervals && isset($controllers[$n]->fio['wdpc'])) {
@@ -562,6 +624,7 @@ abstract class BlockStorageTest {
                 fwrite($fp, ob_get_contents());
                 ob_end_clean();
               }
+              else if ($content === FALSE) BlockStorageTest::printMsg(sprintf('Skipping %s content for %s report', $section, $controllers[$n]->test), $verbose, __FILE__, __LINE__);
               else BlockStorageTest::printMsg(sprintf('Unable to get %s content for %s report', $section, $controllers[$n]->test), $verbose, __FILE__, __LINE__, TRUE);
             }
           }
@@ -584,7 +647,7 @@ abstract class BlockStorageTest {
         exec(sprintf('cd %s; zip %s *; mv %s %s', $tdir, basename($zip), basename($zip), $dir));
         if (!isset($options['nopdfreport']) || !$options['nopdfreport']) {
           // generate postscript report
-          $cmd = sprintf('cd %s; wkhtmltopdf -s Letter index.html report.pdf >/dev/null 2>&1; echo $?', $tdir);
+          $cmd = sprintf('cd %s; wkhtmltopdf -s Letter --footer-left [date] --footer-right [page] index.html report.pdf >/dev/null 2>&1; echo $?', $tdir);
           $ecode = trim(exec($cmd));
           if ($ecode > 0) BlockStorageTest::printMsg(sprintf('Failed to create PDF report'), $verbose, __FILE__, __LINE__, TRUE);
           else {
@@ -801,7 +864,7 @@ abstract class BlockStorageTest {
    * using the $jobs given (or all jobs in $this->fio['wdpc']). Return value 
    * should be HTML that can be imbedded into the report. The HTML may include 
    * an image reference without any directory path (e.g. <img src="iops.svg>")
-   * return NULL on error
+   * returns NULL on error, FALSE if not content required
    * @param string $section the section identifier provided by 
    * $this->getReportSections()
    * @param array $jobs all fio job results occuring within the steady state 
@@ -834,9 +897,7 @@ abstract class BlockStorageTest {
         'refill_buffers' => FALSE,
         'scramble_buffers' => TRUE
       ),
-      'font' => 'Source Sans Pro',
-      'font_size' => 11,
-      'font_url' => 'http://fonts.googleapis.com/css?family=Source+Sans+Pro',
+      'font_size' => 9,
       'highcharts_js_url' => 'http://code.highcharts.com/highcharts.js',
       'highcharts3d_js_url' => 'http://code.highcharts.com/highcharts-3d.js',
       'jquery_url' => 'http://code.jquery.com/jquery-2.1.0.min.js',
@@ -853,14 +914,14 @@ abstract class BlockStorageTest {
       'ss_rounds' => 25,
       'ss_verification' => 10,
       'test' => array('iops'),
-      'threads' => '{cpus}/2',
+      'threads' => '{cpus}',
       'threads_per_target_max' => 4,
-      'timeout' => 86400
+      'timeout' => 86400,
+      'wd_test_duration' => 60
     );
     $opts = array(
       'active_range:',
       'fio:',
-      'font:',
       'font_size:',
       'highcharts_js_url:',
       'highcharts3d_js_url:',
@@ -896,6 +957,7 @@ abstract class BlockStorageTest {
       'precondition_passes:',
       'secureerase_pswd:',
       'skip_blocksize:',
+      'skip_workload:',
       'ss_rounds:',
       'ss_verification:',
       'target:',
@@ -903,9 +965,10 @@ abstract class BlockStorageTest {
       'threads:',
       'threads_per_target_max:',
       'timeout:',
-      'v' => 'verbose'
+      'v' => 'verbose',
+      'wd_test_duration:'
     );
-    $options = BlockStorageTest::parseArgs($opts, array('skip_blocksize', 'target', 'test'));
+    $options = BlockStorageTest::parseArgs($opts, array('skip_blocksize', 'skip_workload', 'target', 'test'));
     // explicit fio command
     foreach($defaults as $key => $val) {
       if (!isset($options[$key])) $options[$key] = $val;
@@ -950,6 +1013,10 @@ abstract class BlockStorageTest {
         $options['threads'] = round($options['threads']/count($options['target']));
         if ($options['threads'] == 0) $options['threads'] = 1;
       }
+      
+      // adjust for threads_per_target_max
+      if (isset($options['threads_per_target_max']) && $options['threads'] > $options['threads_per_target_max']) $options['threads'] = $options['threads_per_target_max'];
+      
     }
     return $options;
   }
@@ -983,7 +1050,7 @@ abstract class BlockStorageTest {
       require_once($file);
       $className = str_replace('.php', '', basename($file));
       if (class_exists($className)) {
-        $controller = new $className();
+        $controller = new $className($options);
         $controller->test = $test;
         $controller->options = $options; 
         // determine target types (device or volume)
@@ -1420,14 +1487,16 @@ abstract class BlockStorageTest {
       'oio_per_thread' => array('min' => 1, 'max' => 256),
       'output' => array('write' => TRUE),
       'precondition_passes' => array('min' => 1, 'max' => 5),
-      'skip_blocksize' => array('option' => array('1m', '128k', '64k', '32k', '16k', '8k', '512b'));
+      'skip_blocksize' => array('option' => array('1m', '128k', '64k', '32k', '16k', '8k', '512b')),
+      'skip_workload' => array('option' => array('100/0', '95/5', '65/35', '50/50', '35/65', '5/95')),
       'ss_rounds' => array('min' => 5, 'max' => 100),
       'ss_verification' => array('min' => 1, 'max' => 100),
       'target' => array('required' => TRUE, 'write' => TRUE),
       'test' => array('option' => array('iops', 'throughput', 'latency', 'wsat', 'hir', 'xsr', 'ecw', 'dirth'), 'required' => TRUE),
       'threads' => array('min' => 1),
       'threads_per_target_max' => array('min' => 1),
-      'timeout' => array('min' => 3600)
+      'timeout' => array('min' => 3600),
+      'wd_test_duration' => array('min' => 10)
     );
     if (!($valid = BlockStorageTest::validateOptions($options, $validate))) {
       $devices = 0;
@@ -1448,14 +1517,16 @@ abstract class BlockStorageTest {
    * device targets. This step is skipped if the target is not a device. 
    * Returns TRUE on success, FALSE otherwise. Preconditioned state is tracked
    * with the $wipc instance variable
+   * @param string $bs the block size to use for preconditioning. defaults to 
+   * 128k
    * @return boolean
    */
-  public final function wipc() {
+  public final function wipc($bs='128k') {
     $noprecondition = isset($this->options['noprecondition']) && $this->options['noprecondition'];
     if (!$noprecondition) {
       BlockStorageTest::printMsg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). This may take a while...', $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
       for($i=1; $i<=$this->options['precondition_passes']; $i++) {
-        $opts = array('blocksize' => '128k', 'rw' => 'write');
+        $opts = array('blocksize' => $bs, 'rw' => 'write');
         BlockStorageTest::printMsg(sprintf('Attempting workload independent precondition pass %d of %d', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
         if ($this->fio($opts, 'wipc')) {
           $this->wipc = TRUE;
@@ -1469,6 +1540,16 @@ abstract class BlockStorageTest {
     }
     return $this->wipc;
   }
+  
+  /**
+   * returns TRUE if wkhtmltopdf is installed, FALSE otherwise
+   * @return boolean
+   */
+  public final static function wkhtmltopdfInstalled() {
+    $ecode = trim(exec('which wkhtmltopdf; echo $?'));
+    return $ecode == 0;
+  }
+  
   
   /**
    * Performs workload dependent preconditioning - this method must be 

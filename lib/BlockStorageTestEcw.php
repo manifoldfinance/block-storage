@@ -6,8 +6,9 @@ class BlockStorageTestEcw extends BlockStorageTest {
   /**
    * Constructor is protected to implement the singleton pattern using 
    * the BlockStorageTest::getTestController static method
+   * @param array $options the test options
    */
-  protected function BlockStorageTestEcw() {}
+  protected function BlockStorageTestEcw($options) {}
     
   /**
    * Performs workload dependent preconditioning - this method must be 

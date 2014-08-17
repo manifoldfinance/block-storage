@@ -6,8 +6,9 @@ class BlockStorageTestHir extends BlockStorageTest {
   /**
    * Constructor is protected to implement the singleton pattern using 
    * the BlockStorageTest::getTestController static method
+   * @param array $options the test options
    */
-  protected function BlockStorageTestHir() {}
+  protected function BlockStorageTestHir($options) {}
     
   /**
    * Performs workload dependent preconditioning - this method must be 

@@ -6,8 +6,9 @@ class BlockStorageTestXsr extends BlockStorageTest {
   /**
    * Constructor is protected to implement the singleton pattern using 
    * the BlockStorageTest::getTestController static method
+   * @param array $options the test options
    */
-  protected function BlockStorageTestXsr() {}
+  protected function BlockStorageTestXsr($options) {}
     
   /**
    * Performs workload dependent preconditioning - this method must be 
