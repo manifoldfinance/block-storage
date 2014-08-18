@@ -281,6 +281,7 @@ variables (e.g. `export bm_param_test=iops`)
                               throughput: Throughput Test - measures 128k and 
                                           1m sequential read and write 
                                           throughput (MB/s) in steady state
+                                          NOT YET IMPLEMENTED
                               latency:    Latency Test - measures IO response 
                                           times for 3 block sizes (0.5k, 4k and 
                                           8k), and 3 read/write mixes (100/0, 
@@ -288,27 +289,33 @@ variables (e.g. `export bm_param_test=iops`)
                                           `target` devices or volumes are 
                                           specified, latency tests are 
                                           performed sequentially
+                                          NOT YET IMPLEMENTED
                               wsat:       Write Saturation Test - measures how 
                                           drives respond to continuous 4k 
                                           random writes over time and total GB 
                                           written (TGBW)
+                                          NOT YET IMPLEMENTED
                               hir:        Host Idle Recovery - observes whether 
                                           the devices utilizes background 
                                           garbage collection wherein 
                                           performance increases with the 
                                           introduction of host idle times 
                                           between periods of 4k random writes
+                                          NOT YET IMPLEMENTED
                               xsr:        Cross Stimulus Recovery - tests how 
                                           the device handles transitions from 
                                           large block sequential writes to 
                                           small block random writes and back
+                                          NOT YET IMPLEMENTED
                               ecw:        Enterprise Composite Workload - 
                                           measures performance in a mixed IO 
                                           environment
+                                          NOT YET IMPLEMENTED
                               dirth:      Demand Intensity / Response Time 
                                           Histogram - measures performance 
                                           degradation when a device is subject 
                                           to a super saturating IO load
+                                          NOT YET IMPLEMENTED
                             Multiple tests may be specified each separated by 
                             a comma. Default for this parameter is iops. Some 
                             tests like 'hir' are specific to SSD type devices
