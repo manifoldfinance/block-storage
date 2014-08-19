@@ -212,7 +212,7 @@ abstract class BlockStorageTest {
             $options['size'] = $size . 'm';
             // register shutdown method so test files are deleted
             foreach($targets as $target) {
-              if (!file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) register_shutdown_function('unlink', $file);
+              if ($this->volumeTargets && file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) register_shutdown_function('unlink', $file);
             }
           }
         }
