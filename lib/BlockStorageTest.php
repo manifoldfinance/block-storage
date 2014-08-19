@@ -372,10 +372,13 @@ abstract class BlockStorageTest {
    * or xMax are specified, but not xTics, xTics defaults to 8
    * @param boolean $html whether or not to return the html <img element or just
    * the name of the file
-   * @param boolean $bar whether or not to render the chart as a bar chart
+   * @param boolean $histogram whether or not to render the chart using a 
+   * histogram. If TRUE, $coords should represent all of the y values for a 
+   * given X. The $coords hash key will be used as the X label and the value(s) 
+   * rendered using a clustered histogram (grouped column chart)
    * @return string
    */
-  protected final function generateLineChart($dir, $section, $coords, $xlabel=NULL, $ylabel=NULL, $title=NULL, $settings=NULL, $html=TRUE, $bar=FALSE) {
+  protected final function generateLineChart($dir, $section, $coords, $xlabel=NULL, $ylabel=NULL, $title=NULL, $settings=NULL, $html=TRUE, $histogram=FALSE) {
     BlockStorageTest::printMsg(sprintf('Generating line chart in %s for test %s and section %s with %d coords', $dir, $this->test, $section, count($coords)), $this->verbose, __FILE__, __LINE__);
     
     $chart = NULL;
@@ -391,26 +394,42 @@ abstract class BlockStorageTest {
       $maxPoints = NULL;
       foreach(array_keys($coords) as $i => $key) {
         if ($maxPoints === NULL || count($coords[$key]) > $maxPoints) $maxPoints = count($coords[$key]);
-        fwrite($df, sprintf("%s%s%s\t%s%s", $i > 0 ? "\t" : '', $key ? $key . ' ' : '', $xlabel ? $xlabel : 'X', $key ? $key . ' ' : '', $ylabel ? $ylabel : 'Y'));
+        if (!$histogram) fwrite($df, sprintf("%s%s%s\t%s%s", $i > 0 ? "\t" : '', $key ? $key . ' ' : '', $xlabel ? $xlabel : 'X', $key ? $key . ' ' : '', $ylabel ? $ylabel : 'Y'));
       }
-      fwrite($df, "\n");
+      if (!$histogram) fwrite($df, "\n");
       
       // determine value ranges and generate data file
       $minX = NULL;
       $maxX = NULL;
       $minY = NULL;
       $maxY = NULL;
-      for($n=0; $n<$maxPoints; $n++) {
-        foreach(array_keys($coords) as $i => $key) {
-          $x = isset($coords[$key][$n][0]) ? $coords[$key][$n][0] : '';
+      if ($histogram) {
+        foreach($coords as $x => $points) {
           if (is_numeric($x) && ($minX === NULL || $x < $minX)) $minX = $x;
           if (is_numeric($x) && $x > $maxX) $maxX = $x;
-          $y = isset($coords[$key][$n][1]) ? $coords[$key][$n][1] : '';
-          if (is_numeric($y) && ($minY === NULL || $y < $minY)) $minY = $y;
-          if (is_numeric($y) && $y > $maxY) $maxY = $y;
-          fwrite($df, sprintf("%s%s\t%s", $i > 0 ? "\t" : '', $x, $y));
+          fwrite($df, $x);
+          for($n=0; $n<$maxPoints; $n++) {
+            $y = isset($points[$n]) ? $points[$n]*1 : '';
+            if (is_numeric($y) && ($minY === NULL || $y < $minY)) $minY = $y;
+            if (is_numeric($y) && $y > $maxY) $maxY = $y;
+            fwrite($df, sprintf("\t%s", $y));
+          }
+          fwrite($df, "\n");
         }
-        fwrite($df, "\n");
+      }
+      else {
+        for($n=0; $n<$maxPoints; $n++) {
+          foreach(array_keys($coords) as $i => $key) {
+            $x = isset($coords[$key][$n][0]) ? $coords[$key][$n][0] : '';
+            if (is_numeric($x) && ($minX === NULL || $x < $minX)) $minX = $x;
+            if (is_numeric($x) && $x > $maxX) $maxX = $x;
+            $y = isset($coords[$key][$n][1]) ? $coords[$key][$n][1] : '';
+            if (is_numeric($y) && ($minY === NULL || $y < $minY)) $minY = $y;
+            if (is_numeric($y) && $y > $maxY) $maxY = $y;
+            fwrite($df, sprintf("%s%s\t%s", $i > 0 ? "\t" : '', $x, $y));
+          }
+          fwrite($df, "\n");
+        } 
       }
       fclose($df);
       
@@ -469,9 +488,9 @@ abstract class BlockStorageTest {
       fwrite($fp, "set format y \"%'10.0f\"\n");
       fwrite($fp, "set format x \"%'10.0f\"\n");
       if ($xlabel) fwrite($fp, sprintf("set xlabel \"%s\"\n", $xlabel));
-      fwrite($fp, sprintf("set xrange [%d:%d]\n", $xMin, $xMax));
+      if ($xMin != $xMax) fwrite($fp, sprintf("set xrange [%d:%d]\n", $xMin, $xMax));
       if (isset($settings['xLogscale'])) fwrite($fp, "set logscale x\n");
-      else fwrite($fp, sprintf("set xtics %d, %d, %d\n", $xMin, $xStep, $xMax));
+      else if ($xMin != $xMax) fwrite($fp, sprintf("set xtics %d, %d, %d\n", $xMin, $xStep, $xMax));
       if ($ylabel) fwrite($fp, sprintf("set ylabel \"%s\"\n", $ylabel));
       if (isset($yMin)) {
         fwrite($fp, sprintf("set yrange [%d:%d]\n", $yMin, $yMax));
@@ -490,16 +509,32 @@ abstract class BlockStorageTest {
         if (isset($settings['lines'][$i+1])) fwrite($fp, sprintf("set style line %d %s\n", $i+1, $settings['lines'][$i+1]));
         else fwrite($fp, sprintf("set style line %d lc rgb '%s' lt 1 lw 3\n", $i+1, $colors[$i]));
       }
+      if ($histogram) {
+        fwrite($fp, "set style fill solid noborder\n");
+        fwrite($fp, "set boxwidth 0.9 relative\n");
+        fwrite($fp, "set style histogram cluster gap 1\n");
+        fwrite($fp, "set style data histogram\n");
+      }
+      
       fwrite($fp, "set grid noxtics\n");
       if (!isset($settings['nogrid'])) fwrite($fp, "set grid ytics lc rgb '#dddddd' lw 1 lt 0\n");
       else fwrite($fp, "set grid noytics\n");
       fwrite($fp, "set tic scale 0\n");
       fwrite($fp, sprintf("plot \"%s\"", basename($dfile)));
       $colorPtr = 1;
-      foreach(array_keys($coords) as $i => $key) {
-        fwrite($fp, sprintf("%s u %d:%d t \"%s\" ls %d%s", $i > 0 ? ", \\\n\"\"" : '', ($i*2)+1, ($i*2)+2, $key, $colorPtr, $bar ? ' w boxes' : ''));
-        $colorPtr++;
-        if ($colorPtr > count($colors)) $colorPtr = 1;
+      if ($histogram) {
+        for($i=0; $i<$maxPoints; $i++) {
+          fwrite($fp, sprintf("%s u %d:xtic(1) ls %d notitle", $i > 0 ? ", \\\n\"\"" : '', $i+2, $colorPtr));
+          $colorPtr++;
+          if ($colorPtr > count($colors)) $colorPtr = 1;
+        }
+      }
+      else {
+        foreach(array_keys($coords) as $i => $key) {
+          fwrite($fp, sprintf("%s u %d:%d t \"%s\" ls %d", $i > 0 ? ", \\\n\"\"" : '', ($i*2)+1, ($i*2)+2, $key, $colorPtr));
+          $colorPtr++;
+          if ($colorPtr > count($colors)) $colorPtr = 1;
+        } 
       }
       
       fclose($fp);
@@ -516,7 +551,7 @@ abstract class BlockStorageTest {
         BlockStorageTest::printMsg(sprintf('Generated line chart %s successfully', $img), $this->verbose, __FILE__, __LINE__);
         // attempt to convert to PNG using wkhtmltoimage
         if (BlockStorageTest::wkhtmltopdfInstalled()) {
-          $cmd = sprintf('wkhtmltoimage %s %s >/dev/null', $img, $png = str_replace('.svg', '.png', $img));
+          $cmd = sprintf('wkhtmltoimage %s %s >/dev/null 2>&1', $img, $png = str_replace('.svg', '.png', $img));
           $ecode = trim(exec($cmd));
           if ($ecode > 0 || !file_exists($png) || !filesize($png)) BlockStorageTest::printMsg(sprintf('Unable to convert SVG image %s to PNG %s (exit code %d)', $img, $png, $ecode), $this->verbose, __FILE__, __LINE__, TRUE);
           else {
@@ -627,6 +662,7 @@ abstract class BlockStorageTest {
             
             $testPageNum = 0;
             $sections = $controllers[$n]->getReportSections();
+            BlockStorageTest::printMsg(sprintf('Rendering report sections: %s', implode(', ', array_keys($sections))), $verbose, __FILE__, __LINE__);
             foreach($sections as $section => $label) {
               $test = $controllers[$n]->test;
               if ($content = $controllers[$n]->getReportContent($section, $ssJobs, $tdir)) {
@@ -661,7 +697,7 @@ abstract class BlockStorageTest {
         $zip = sprintf('%s/report.zip', $tdir);
         exec(sprintf('cd %s; zip %s *; mv %s %s', $tdir, basename($zip), basename($zip), $dir));
         if (!isset($options['nopdfreport']) || !$options['nopdfreport']) {
-          // generate postscript report
+          // generate PDF report
           $cmd = sprintf('cd %s; wkhtmltopdf -s Letter --footer-left [date] --footer-right [page] index.html report.pdf >/dev/null 2>&1; echo $?', $tdir);
           $ecode = trim(exec($cmd));
           if ($ecode > 0) BlockStorageTest::printMsg(sprintf('Failed to create PDF report'), $verbose, __FILE__, __LINE__, TRUE);
@@ -677,8 +713,11 @@ abstract class BlockStorageTest {
         exec(sprintf('rm -rf %s', $tdir));
         BlockStorageTest::printMsg(sprintf('Removed temporary directory %s', $tdir), $verbose, __FILE__, __LINE__);
       }
-    } 
+    }
     else BlockStorageTest::printMsg(sprintf('Unable to generate reports in directory %s - it either does not exist or is not writable', $dir), $verbose, __FILE__, __LINE__, TRUE);
+    
+    
+    BlockStorageTest::printMsg(sprintf('Reports generation complete - status %d', $generated), $verbose, __FILE__, __LINE__);
     
     return $generated;
   }
@@ -1032,7 +1071,9 @@ abstract class BlockStorageTest {
       // adjust for threads_per_target_max
       if (isset($options['threads_per_target_max']) && $options['threads'] > $options['threads_per_target_max']) $options['threads'] = $options['threads_per_target_max'];
       
+      $options['threads_total'] = $options['threads']*count($options['target']);
     }
+    else $options['threads_total'] = $options['threads'];
     return $options;
   }
   

@@ -213,10 +213,10 @@ class BlockStorageTestIops extends BlockStorageTest {
     return array(
       'AR Segments' => 'N/A',
       'Pre Condition 1' => $this->wipc ? 'SEQ 128K W' : 'None',
-      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']) : 'N/A',
+      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']) : 'N/A',
       '&nbsp;&nbsp;Duration' => $this->wipc ? sprintf('%dX %s Capacity%s', $this->options['precondition_passes'], $this->deviceTargets ? 'Device' : 'Volume', $this->options['active_range'] < 100 ? ' (' . $this->options['active_range'] . '% AR)' : '') : 'N/A',
       'Pre Condition 2' => 'IOPS Loop',
-      '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']),
+      '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']),
       '&nbsp;&nbsp;SS Rouds' => $this->wdpc !== NULL ? sprintf('%d - %d', $this->wdpcComplete - 4, $this->wdpcComplete) : 'N/A',
       'Notes' => $this->wdpc === FALSE ? sprintf('SS NOT ACHIEVED', $this->wdpcComplete) : ''
     );
@@ -243,7 +243,7 @@ class BlockStorageTestIops extends BlockStorageTest {
       'Test Stimulus 1' => 'IOPS Loop',
       '&nbsp;&nbsp;RW Mix' => 'Outer Loop',
       '&nbsp;&nbsp;Block Sizes' => 'Inner Loop',
-      '&nbsp;&nbsp;TOIO - TC/QD' => sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']),
+      '&nbsp;&nbsp;TOIO - TC/QD' => sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']),
       '&nbsp;&nbsp;Steady State' => $this->wdpc !== NULL ? sprintf('%d - %d%s', $this->wdpcComplete - 4, $this->wdpcComplete, $this->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A',
       'Test Stimulus 2' => 'N/A',
       '&nbsp;&nbsp;TOIO - TC/QD ' => 'N/A',
@@ -279,7 +279,14 @@ class BlockStorageTestIops extends BlockStorageTest {
         foreach($blockSizes as $bs) {
           $name = sprintf('x%d-%s-%s-rand', $x, str_replace('/', '_', $rw), $bs);
           BlockStorageTest::printMsg(sprintf('Executing random IO test iteration for round %d of %d, rw ratio %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
-          if ($fio = $this->fio(array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'rw' => 'randrw', 'rwmixread' => $rwmixread, 'time_based' => FALSE), 'wdpc')) {
+          $params = array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'time_based' => FALSE);
+          if ($read == 100) $params['rw'] = 'randread';
+          else if ($write == 100) $params['rw'] = 'randwrite';
+          else {
+            $params['rw'] = 'randwrite';
+            $params['rwmixread'] = $rwmixread;
+          }
+          if ($fio = $this->fio($params, 'wdpc')) {
             BlockStorageTest::printMsg(sprintf('Random IO test iteration for round %d of %d, rw ratio %s and block size %s was successful', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
             $results = $this->fio['wdpc'][count($this->fio['wdpc']) - 1];
           }

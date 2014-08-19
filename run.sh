@@ -272,7 +272,6 @@ ARGUMENTS:
                               throughput: Throughput Test - measures 128k and 
                                           1m sequential read and write 
                                           throughput (MB/s) in steady state
-                                          NOT YET IMPLEMENTED
                               latency:    Latency Test - measures IO response 
                                           times for 3 block sizes (0.5k, 4k and 
                                           8k), and 3 read/write mixes (100/0, 
@@ -363,7 +362,7 @@ identifiers - e.g. report-iops.json):
                      10 fio-[test].json corresponding with each of the tests 
                      and 2 files for throughput: test-throughput-128k.json and
                      test-throughput-1024k.json
-  report.zip         HTML test report (see open index.html). The report design
+  report.zip         HTML test report (open index.html). The report design
                      and layout is based on the SNIA test specification. In 
                      addition, this archive contains source gnuplot scripts and 
                      data files for report graphs. Graphs are rendered in svg 

@@ -14,7 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 /**
  * run script for block storage testing
  */
@@ -81,7 +80,13 @@ foreach($options['test'] as $test) {
   else BlockStorageTest::printMsg(sprintf('Unable to get %s test controller', $test), $verbose, __FILE__, __LINE__, TRUE);
 }
 // generate report
-if (!$exitCode && count($controllers)) BlockStorageTest::generateReports($controllers);
+if (!$exitCode && count($controllers)) {
+  BlockStorageTest::printMsg(sprintf('Generating reports...'), $verbose, __FILE__, __LINE__);
+  BlockStorageTest::generateReports($controllers);
+  BlockStorageTest::printMsg(sprintf('Report generation complete'), $verbose, __FILE__, __LINE__);
+}
+
+BlockStorageTest::printMsg(sprintf('Exiting with status code %d', $exitCode), $verbose, __FILE__, __LINE__);
 
 exit($exitCode);
 ?>

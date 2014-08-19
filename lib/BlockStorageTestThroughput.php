@@ -30,18 +30,13 @@ class BlockStorageTestThroughput extends BlockStorageTest {
   private $purgeAndPrecondition = FALSE;
   
   /**
-   * references to test objects for specific block sizes
-   */
-  private $tests = array();
-  
-  /**
    * Constructor is protected to implement the singleton pattern using 
    * the BlockStorageTest::getTestController static method
    * @param array $options the test options
    */
   protected function BlockStorageTestThroughput($options, $bs=NULL) {
     if ($bs === NULL) {
-      foreach(array('128k', '1024k') as $bs) {
+      foreach(array('1024k', '128k') as $bs) {
         if (!isset($options['skip_blocksize']) || !in_array($bs, $options['skip_blocksize'])) {
           $this->subtests[$bs] = new BlockStorageTestThroughput($options, $bs);
           $this->subtests[$bs]->purgeAndPrecondition = count($this->subtests[$bs]) > 1;
@@ -84,9 +79,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
   protected function getReportContent($section, $jobs, $dir) {
     $content = NULL;
     $bs = preg_match('/128/', $section) ? '128k' : '1024k';
-    if ($this->bs === NULL) {
-      if (isset($this->subtests[$bs])) $content = $this->subtests[$bs]->getReportContent($section, $jobs, $dir);
-    }
+    if ($this->bs === NULL) return FALSE;
     else if ($this->bs != $bs) return FALSE;
     else {
       switch($section) {
@@ -95,10 +88,11 @@ class BlockStorageTestThroughput extends BlockStorageTest {
         case 'ss-convergence-read-1024':
         case 'ss-convergence-read-128':
           $key = preg_match('/read/', $section) ? 'read' : 'write';
+          $workload = preg_match('/read/', $section) ? '100_0' : '0_100';
           $coords = array();
           foreach(array_keys($this->fio['wdpc']) as $i) {
             $job = isset($this->fio['wdpc'][$i]['jobs'][0]['jobname']) ? $this->fio['wdpc'][$i]['jobs'][0]['jobname'] : NULL;
-            if ($job && preg_match("/^x([0-9]+)\-0_100\-${bs}\-/", $job, $m) && isset($this->fio['wdpc'][$i]['jobs'][0][$key]['bw'])) {
+            if ($job && preg_match("/^x([0-9]+)\-${workload}\-${bs}\-/", $job, $m) && isset($this->fio['wdpc'][$i]['jobs'][0][$key]['bw'])) {
               $round = $m[1]*1;
               $bw = round($this->fio['wdpc'][$i]['jobs'][0][$key]['bw']/1024, 1);
               if (!isset($coords[$bs])) $coords[$bs] = array();
@@ -173,8 +167,8 @@ class BlockStorageTestThroughput extends BlockStorageTest {
             $content .= "</tr>\n</thead>\n<tbody>\n";
             $content .= sprintf('<tr><th>%s</th>', $bs);
             foreach($workloads as $rw) {
-              $bw = isset($table[$bs][$rw]) ? $table[$bs][$rw] : NULL;
-              $content .= sprintf('<td>%s</td>', $bw ? round(array_sum($bw)/count($bw), 1) : '');
+              $bw = isset($table[$bs][$rw]) ? round(array_sum($table[$bs][$rw])/count($table[$bs][$rw]), 1) : '';
+              $content .= sprintf('<td>%s</td>', $bw);
             }
             $content .= "</tr>\n";
             $content .= "</tbody>\n</table>";
@@ -185,10 +179,8 @@ class BlockStorageTestThroughput extends BlockStorageTest {
             $settings = array('yMin' => 0);
             foreach($workloads as $rw) {
               if ($bw = isset($table[$bs][$rw]) ? round(array_sum($table[$bs][$rw])/count($table[$bs][$rw]), 1) : NULL) {
-                preg_match('/^([0-9]+)([bkm])$/', $bs, $m);
-                $kb = $m[1];
                 if (!isset($coords[$rw])) $coords[$rw] = array();
-                $coords[$rw][] = array($rw, $kb);
+                $coords[$rw][] = $bw;
               }
             }
             $content = $this->generateLineChart($dir, $section, $coords, 'R/W Mix', 'Throughput (MB/s)', NULL, $settings, TRUE, TRUE); 
@@ -206,18 +198,24 @@ class BlockStorageTestThroughput extends BlockStorageTest {
    * @return array
    */
   protected function getReportSections() {
-    return array(
-      'ss-convergence-write-1024' => 'Throughput Test - SS Convergence - Write 1024KiB',
-      'ss-convergence-read-1024' => 'Throughput Test - SS Convergence - Read 1024 KiB',
-      'ss-measurement-1024' => 'Steady State Measurement Window - SEQ/1024 KiB',
-      'tabular-1024' => 'Throughput - All RW Mix &amp; BS - Tabular Data 1024KiB',
-      '2d-plot-1024' => 'Throughput - All RW Mix &amp; BS - 2D Plot 1024KiB',
-      'ss-convergence-write-128' => 'Throughput Test - SS Convergence - Write 128KiB',
-      'ss-convergence-read-128' => 'Throughput Test - SS Convergence - Read 128KiB',
-      'ss-measurement-128' => 'Steady State Measurement Window - SEQ/128 KiB',
-      'tabular-128' => 'Throughput -All RW Mix &amp; BS - Tabular Data 128KiB',
-      '2d-plot-128' => 'Throughput -All RW Mix &amp; BS - 2D Plot 128KiB'
-    );
+    if ($this->bs == '128k') {
+      return array(
+        'ss-convergence-write-128' => 'Throughput Test - SS Convergence - Write 128KiB',
+        'ss-convergence-read-128' => 'Throughput Test - SS Convergence - Read 128KiB',
+        'ss-measurement-128' => 'Steady State Measurement Window - SEQ/128 KiB',
+        'tabular-128' => 'Throughput -All RW Mix &amp; BS - Tabular Data 128KiB',
+        '2d-plot-128' => 'Throughput -All RW Mix &amp; BS - 2D Plot 128KiB'
+      );
+    }
+    else if ($this->bs == '1024k') {
+      return array(
+        'ss-convergence-write-1024' => 'Throughput Test - SS Convergence - Write 1024KiB',
+        'ss-convergence-read-1024' => 'Throughput Test - SS Convergence - Read 1024 KiB',
+        'ss-measurement-1024' => 'Steady State Measurement Window - SEQ/1024 KiB',
+        'tabular-1024' => 'Throughput - All RW Mix &amp; BS - Tabular Data 1024KiB',
+        '2d-plot-1024' => 'Throughput - All RW Mix &amp; BS - 2D Plot 1024KiB',
+      );
+    }
   }
   
   /**
@@ -230,10 +228,10 @@ class BlockStorageTestThroughput extends BlockStorageTest {
     return array(
       'AR Segments' => 'N/A',
       'Pre Condition 1' => $this->wipc ? 'SEQ 128K W' : 'None',
-      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']) : 'N/A',
+      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']) : 'N/A',
       '&nbsp;&nbsp;Duration' => $this->wipc ? sprintf('%dX %s Capacity%s', $this->options['precondition_passes'], $this->deviceTargets ? 'Device' : 'Volume', $this->options['active_range'] < 100 ? ' (' . $this->options['active_range'] . '% AR)' : '') : 'N/A',
       'Pre Condition 2' => 'SEQ 128K W',
-      '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']),
+      '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']),
       '&nbsp;&nbsp;SS Rouds' => isset($this->subtests['128k']) && $this->subtests['128k']->wdpc !== NULL ? sprintf('%d - %d', $this->subtests['128k']->wdpcComplete - 4, $this->subtests['128k']->wdpcComplete) : 'N/A',
       'Notes' => isset($this->subtests['128k']) && $this->subtests['128k']->wdpc === FALSE ? sprintf('SS NOT ACHIEVED', $this->subtests['128k']->wdpcComplete) : ''
     );
@@ -292,13 +290,13 @@ class BlockStorageTestThroughput extends BlockStorageTest {
       $params['Test Stimulus 1'] = 'SEQ 1024KiB';
       $params['&nbsp;&nbsp;RW Mix'] = '100:0 / 0:100';
       $params['&nbsp;&nbsp;Block Sizes'] = 'SEQ 1024KiB';
-      $params['&nbsp;&nbsp;TOIO - TC/QD'] = sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']);
+      $params['&nbsp;&nbsp;TOIO - TC/QD'] = sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']);
       $params['&nbsp;&nbsp;Steady State'] = $this->subtests['1024k']->wdpc !== NULL ? sprintf('%d - %d%s', $this->subtests['1024k']->wdpcComplete - 4, $this->subtests['1024k']->wdpcComplete, $this->subtests['1024k']->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A';
     }
     
     if (isset($this->subtests['128k'])) {
       $params['Test Stimulus 2'] = 'SEQ 128KiB';
-      $params['&nbsp;&nbsp;TOIO - TC/QD'] = sprintf('TC %d/QD %d', $this->options['threads'], $this->options['oio_per_thread']);
+      $params['&nbsp;&nbsp;TOIO - TC/QD'] = sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']);
       $params['&nbsp;&nbsp;Steady State'] = $this->subtests['128k']->wdpc !== NULL ? sprintf('%d - %d%s', $this->subtests['128k']->wdpcComplete - 4, $this->subtests['128k']->wdpcComplete, $this->subtests['128k']->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A';
     }
     
@@ -349,7 +347,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
             if ($x >= 5) {
               $metrics = array();
               for($i=4; $i>=0; $i--) $metrics[$x-$i] = $ssMetrics[$x-$i];
-              BlockStorageTest::printMsg(sprintf('Test iteration for round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using %s THROUGHPUT metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
+              BlockStorageTest::printMsg(sprintf('Test iteration for round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using %s THROUGHPUT metrics [%s],[%s]', $x, $max, count($metrics), implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
               if ($this->isSteadyState($metrics, $x)) {
                 BlockStorageTest::printMsg(sprintf('Steady state achieved - %s testing will stop', $bs), $this->verbose, __FILE__, __LINE__);
                 $status = TRUE;
