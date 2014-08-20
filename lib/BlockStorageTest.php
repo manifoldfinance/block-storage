@@ -499,7 +499,7 @@ abstract class BlockStorageTest {
       if (isset($yMin)) {
         fwrite($fp, sprintf("set yrange [%d:%d]\n", $yMin, $yMax));
         if (isset($settings['yLogscale'])) fwrite($fp, "set logscale y\n");
-        else fwrite($fp, sprintf("set ytics %d, %d, %d\n", $yMin, $yStep, $yMax));
+        else if (!$yFloatPrec) fwrite($fp, sprintf("set ytics %d, %d, %d\n", $yMin, $yStep, $yMax));
       }
       if ($title) fwrite($fp, sprintf("set title \"%s\"\n", $title));
       fwrite($fp, "set key reverse Left outside\n");
