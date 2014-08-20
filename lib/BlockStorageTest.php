@@ -1027,6 +1027,7 @@ abstract class BlockStorageTest {
       'threads:',
       'threads_per_target_max:',
       'timeout:',
+      'trim_offset_end:',
       'v' => 'verbose',
       'wd_test_duration:'
     );
@@ -1358,7 +1359,7 @@ abstract class BlockStorageTest {
         // next try TRIM
         if (!$purged && !$rotational && !$notrim) {
           BlockStorageTest::printMsg(sprintf('Attempting TRIM for volume %s', $volume), $this->verbose, __FILE__, __LINE__);
-          $cmd = sprintf(($this->deviceTargets ? 'blkdiscard' : 'fstrim') . ' %s >/dev/null 2>&1; echo $?', $this->deviceTargets ? $target : $volume);
+          $cmd = sprintf(($this->deviceTargets ? 'blkdiscard' : 'fstrim') . '%s %s >/dev/null 2>&1; echo $?', $this->deviceTargets && isset($this->options['trim_offset_end']) && $this->options['trim_offset_end'] > 0 ? sprintf(' -o 0 -l `expr $(lsblk -n -o size -b %s) - %d`', $target, $this->options['trim_offset_end']) : '', $this->deviceTargets ? $target : $volume);
           $ecode = trim(exec($cmd));
           if ($ecode > 0) BlockStorageTest::printMsg(sprintf('TRIM not supported or failed for target %s (exit code %d)', $target, $ecode), $this->verbose, __FILE__, __LINE__);
           else {
@@ -1560,6 +1561,7 @@ abstract class BlockStorageTest {
       'threads' => array('min' => 1),
       'threads_per_target_max' => array('min' => 1),
       'timeout' => array('min' => 3600),
+      'trim_offset_end' => array('min' => 1),
       'wd_test_duration' => array('min' => 10)
     );
     if (!($valid = BlockStorageTest::validateOptions($options, $validate))) {

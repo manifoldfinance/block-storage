@@ -329,6 +329,9 @@ ARGUMENTS:
 
 --timeout                   Max time to permit for testing in seconds. Default 
                             is 24 hours (86400 seconds)
+                            
+--trim_offset_end           When invoking a blkdiscard TRIM, offset the lenth
+                            by this number of bytes
 
 --verbose/-v                Show verbose output - warning: this may produce a 
                             lot of output
