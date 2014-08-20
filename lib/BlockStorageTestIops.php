@@ -125,7 +125,7 @@ class BlockStorageTestIops extends BlockStorageTest {
         $blockSizes = array_reverse($blockSizes);
         // tabular
         if ($table && $section == 'tabular') {
-          $content = "<table class='meta tabular'>\n<thead>\n";
+          $content = "<div style='text-align:center'><table class='meta tabular'>\n<thead>\n";
           $content .= '<tr><th rowspan="2" class="white">Block Size (KiB)</th><th colspan="' . count($workloads) . "\" class=\"white\">Read / Write Mix %</th></tr>\n<tr>";
           foreach($workloads as $rw) $content .= sprintf('<th>%s</th>', $rw);
           $content .= "</tr>\n</thead>\n<tbody>\n";
@@ -137,7 +137,7 @@ class BlockStorageTestIops extends BlockStorageTest {
             }
             $content .= "</tr>\n";
           }
-          $content .= "</tbody>\n</table>";
+          $content .= "</tbody>\n</table></div>";
         }
         // 2d plot
         else if ($table && $section == '2d-plot') {

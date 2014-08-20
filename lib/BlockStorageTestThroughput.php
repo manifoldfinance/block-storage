@@ -42,6 +42,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
           $this->subtests[$bs]->purgeAndPrecondition = count($this->subtests[$bs]) > 1;
           $this->subtests[$bs]->test = 'throughput';
           $this->subtests[$bs]->verbose = isset($options['verbose']) && $options['verbose'];
+          $this->subtests[$bs]->controller =& $this;
         }
       }
     }
@@ -49,6 +50,11 @@ class BlockStorageTestThroughput extends BlockStorageTest {
       $this->bs = $bs;
       $this->options = $options;
       $this->test = 'throughput';
+      foreach($options['target'] as $target) {
+        $device = BlockStorageTest::getDevice($target);
+        $device == $target ? $this->deviceTargets = TRUE : $this->volumeTargets = TRUE;
+        break;
+      }
     }
   }
   
@@ -95,8 +101,9 @@ class BlockStorageTestThroughput extends BlockStorageTest {
             if ($job && preg_match("/^x([0-9]+)\-${workload}\-${bs}\-/", $job, $m) && isset($this->fio['wdpc'][$i]['jobs'][0][$key]['bw'])) {
               $round = $m[1]*1;
               $bw = round($this->fio['wdpc'][$i]['jobs'][0][$key]['bw']/1024, 1);
-              if (!isset($coords[$bs])) $coords[$bs] = array();
-              $coords[$bs][] = array($round, $bw);
+              $label = sprintf('BS=%s', $bs);
+              if (!isset($coords[$label])) $coords[$label] = array();
+              $coords[$label][] = array($round, $bw);
             }
           }
           if ($coords) $content = $this->generateLineChart($dir, $section, $coords, 'Round', 'Throughput (MB/s)', NULL, array('yMin' => 0));
@@ -161,7 +168,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
           $workloads = array_reverse($workloads);
           // tabular
           if ($table && preg_match('/tabular/', $section)) {
-            $content = "<table class='meta tabular'>\n<thead>\n";
+            $content = "<div style='text-align:center'><table class='meta tabular'>\n<thead>\n";
             $content .= '<tr><th rowspan="2" class="white">Block Size (KiB)</th><th colspan="' . count($workloads) . "\" class=\"white\">Read / Write Mix %</th></tr>\n<tr>";
             foreach($workloads as $rw) $content .= sprintf('<th>%s</th>', $rw);
             $content .= "</tr>\n</thead>\n<tbody>\n";
@@ -171,7 +178,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
               $content .= sprintf('<td>%s</td>', $bw);
             }
             $content .= "</tr>\n";
-            $content .= "</tbody>\n</table>";
+            $content .= "</tbody>\n</table></div>";
           }
           // 2d plot
           else if ($table && preg_match('/plot/', $section)) {
@@ -219,16 +226,19 @@ class BlockStorageTestThroughput extends BlockStorageTest {
    * @return array
    */
   protected function getSetupParameters() {
-    return array(
-      'AR Segments' => 'N/A',
-      'Pre Condition 1' => $this->wipc ? 'SEQ 128K W' : 'None',
-      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD 1', $this->wipcThreads()) : 'N/A',
-      '&nbsp;&nbsp;Duration' => $this->wipc ? sprintf('%dX %s Capacity%s', $this->options['precondition_passes'], $this->deviceTargets ? 'Device' : 'Volume', $this->options['active_range'] < 100 ? ' (' . $this->options['active_range'] . '% AR)' : '') : 'N/A',
-      'Pre Condition 2' => 'SEQ 128K W',
-      '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']),
-      '&nbsp;&nbsp;SS Rouds' => isset($this->subtests['128k']) && $this->subtests['128k']->wdpc !== NULL ? sprintf('%d - %d', $this->subtests['128k']->wdpcComplete - 4, $this->subtests['128k']->wdpcComplete) : 'N/A',
-      'Notes' => isset($this->subtests['128k']) && $this->subtests['128k']->wdpc === FALSE ? sprintf('SS NOT ACHIEVED', $this->subtests['128k']->wdpcComplete) : ''
-    );
+    if (isset($this->controller)) return $this->controller->getSetupParameters();
+    else {
+      return array(
+        'AR Segments' => 'N/A',
+        'Pre Condition 1' => $this->wipc ? 'SEQ 128K W' : 'None',
+        '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD 1', $this->wipcThreads()) : 'N/A',
+        '&nbsp;&nbsp;Duration' => $this->wipc ? sprintf('%dX %s Capacity%s', $this->options['precondition_passes'], $this->deviceTargets ? 'Device' : 'Volume', $this->options['active_range'] < 100 ? ' (' . $this->options['active_range'] . '% AR)' : '') : 'N/A',
+        'Pre Condition 2' => isset($this->subtests['128k']) ? 'SEQ 128K W' : 'None',
+        '&nbsp;&nbsp;TOIO - TC/QD ' => isset($this->subtests['128k']) ? sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']) : '',
+        '&nbsp;&nbsp;SS Rouds' => $this->subtests['128k']->wdpc !== NULL ? sprintf('%d - %d', $this->subtests['128k']->wdpcComplete - 4, $this->subtests['128k']->wdpcComplete) : 'N/A',
+        'Notes' => $this->subtests['128k']->wdpc === FALSE ? sprintf('SS NOT ACHIEVED', $this->subtests['128k']->wdpcComplete) : ''
+      );
+    }
   }
   
   /**
@@ -269,32 +279,19 @@ class BlockStorageTestThroughput extends BlockStorageTest {
    * @return array
    */
   protected function getTestParameters() {
-    $params = array(
-      'Test Stimulus 1' => 'None',
-      '&nbsp;&nbsp;RW Mix' => '',
-      '&nbsp;&nbsp;Block Sizes' => '',
-      '&nbsp;&nbsp;TOIO - TC/QD' => '',
-      '&nbsp;&nbsp;Steady State' => '',
-      'Test Stimulus 2' => 'None',
-      '&nbsp;&nbsp;TOIO - TC/QD' => '',
-      '&nbsp;&nbsp;Steady State' => ''
-    );
-    
-    if (isset($this->subtests['1024k'])) {
-      $params['Test Stimulus 1'] = 'SEQ 1024KiB';
-      $params['&nbsp;&nbsp;RW Mix'] = '100:0 / 0:100';
-      $params['&nbsp;&nbsp;Block Sizes'] = 'SEQ 1024KiB';
-      $params['&nbsp;&nbsp;TOIO - TC/QD'] = sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']);
-      $params['&nbsp;&nbsp;Steady State'] = $this->subtests['1024k']->wdpc !== NULL ? sprintf('%d - %d%s', $this->subtests['1024k']->wdpcComplete - 4, $this->subtests['1024k']->wdpcComplete, $this->subtests['1024k']->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A';
+    if (isset($this->controller)) return $this->controller->getTestParameters();
+    else {
+      return array(
+        'Test Stimulus 1' => isset($this->subtests['1024k']) ? 'SEQ 1024KiB' : 'None',
+        '&nbsp;&nbsp;RW Mix' => isset($this->subtests['1024k']) ? '100:0 / 0:100' : '',
+        '&nbsp;&nbsp;Block Sizes' => isset($this->subtests['1024k']) ? 'SEQ 1024KiB' : '',
+        '&nbsp;&nbsp;TOIO - TC/QD' => isset($this->subtests['1024k']) ? sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']) : '',
+        '&nbsp;&nbsp;Steady State' => isset($this->subtests['1024k']) && $this->subtests['1024k']->wdpc !== NULL ? sprintf('%d - %d%s', $this->subtests['1024k']->wdpcComplete - 4, $this->subtests['1024k']->wdpcComplete, $this->subtests['1024k']->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A',
+        'Test Stimulus 2' => isset($this->subtests['128k']) ? 'SEQ 128KiB' : 'None',
+        '&nbsp;&nbsp;TOIO - TC/QD ' => isset($this->subtests['128k']) ? sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']) : '',
+        '&nbsp;&nbsp;Steady State ' => isset($this->subtests['128k']) && $this->subtests['128k']->wdpc !== NULL ? sprintf('%d - %d%s', $this->subtests['128k']->wdpcComplete - 4, $this->subtests['128k']->wdpcComplete, $this->subtests['128k']->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A'
+      );
     }
-    
-    if (isset($this->subtests['128k'])) {
-      $params['Test Stimulus 2'] = 'SEQ 128KiB';
-      $params['&nbsp;&nbsp;TOIO - TC/QD'] = sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']);
-      $params['&nbsp;&nbsp;Steady State'] = $this->subtests['128k']->wdpc !== NULL ? sprintf('%d - %d%s', $this->subtests['128k']->wdpcComplete - 4, $this->subtests['128k']->wdpcComplete, $this->subtests['128k']->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A';
-    }
-    
-    return $params;
   }
     
   /**

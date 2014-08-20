@@ -212,7 +212,7 @@ abstract class BlockStorageTest {
             $options['size'] = $size . 'm';
             // register shutdown method so test files are deleted
             foreach($targets as $target) {
-              if ($this->volumeTargets && file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) register_shutdown_function('unlink', $file);
+              if ($this->volumeTargets && !file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) register_shutdown_function('unlink', $file);
             }
           }
         }
@@ -650,8 +650,8 @@ abstract class BlockStorageTest {
             $params = array(
               'platform' => $controllers[$n]->getPlatformParameters(),
               'device' => $controllers[$n]->getDeviceParameters(),
-              'setup' => $controllers[$n]->getSetupParameters(),
-              'test' => $controllers[$n]->getTestParameters()
+              'setup' => array_merge(array('Data Pattern' => isset($options['norandom']) && $options['norandom'] ? 'PLAIN' : 'RND', 'AR' => $options['active_range'] . '%'), $controllers[$n]->getSetupParameters()),
+              'test' => array_merge(array('Data Pattern' => isset($options['norandom']) && $options['norandom'] ? 'PLAIN' : 'RND', 'AR &amp; Amount' => $options['active_range'] . '%'), $controllers[$n]->getTestParameters())
             );
             $headers = array();
             for ($i=0; $i<100; $i++) {
@@ -706,7 +706,7 @@ abstract class BlockStorageTest {
         exec(sprintf('cd %s; zip %s *; mv %s %s', $tdir, basename($zip), basename($zip), $dir));
         if (!isset($options['nopdfreport']) || !$options['nopdfreport']) {
           // generate PDF report
-          $cmd = sprintf('cd %s; wkhtmltopdf -s Letter --footer-left [date] --footer-right [page] index.html report.pdf >/dev/null 2>&1; echo $?', $tdir);
+          $cmd = sprintf('cd %s; wkhtmltopdf -s Letter --footer-left [date] --footer-right [page] --footer-font-name rfont --footer-font-size %d index.html report.pdf >/dev/null 2>&1; echo $?', $tdir, $options['font_size']);
           $ecode = trim(exec($cmd));
           if ($ecode > 0) BlockStorageTest::printMsg(sprintf('Failed to create PDF report'), $verbose, __FILE__, __LINE__, TRUE);
           else {
@@ -801,7 +801,7 @@ abstract class BlockStorageTest {
       if (file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) $freeSpace += round((filesize($file)/1024)/1024);
     }
     
-    if ($freeSpace) BlockStorageTest::printMsg(sprintf('Target %s has %s MB free space', $target, $freeSpace), $this->verbose, __FILE__, __LINE__);
+    if ($freeSpace) BlockStorageTest::printMsg(sprintf('Target %s has %s MB free space [cmd=%s]', $target, $freeSpace, $cmd), $this->verbose, __FILE__, __LINE__);
     else {
       $freeSpace = NULL;
       BlockStorageTest::printMsg(sprintf('Unable to get free space for target %s using command: %s', $target, $cmd), $this->verbose, __FILE__, __LINE__, TRUE);

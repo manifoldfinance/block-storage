@@ -79,8 +79,8 @@ class BlockStorageTestLatency extends BlockStorageTest {
           $last = $keys[count($keys) - 1];
           $avg = round(array_sum($latencies)/count($latencies), self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION);
           $coords['Average'] = array(array($first, $avg), array($last, $avg));
-          $coords['110% Average'] = array(array($first, round($avg*1.1)), array($last, round($avg*1.1)));
-          $coords['90% Average'] = array(array($first, round($avg*0.9)), array($last, round($avg*0.9)));
+          $coords['110% Average'] = array(array($first, round($avg*1.1, self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION)), array($last, round($avg*1.1, self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION)));
+          $coords['90% Average'] = array(array($first, round($avg*0.9, self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION)), array($last, round($avg*0.9, self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION)));
           $coords['Slope'] = array(array($first, $latencies[$first]), array($last, $latencies[$last]));
           $settings = array();
           // smaller to make room for ss determination table
@@ -130,7 +130,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
         if ($table && $section == 'tabular') {
           $content = '';
           foreach(array('mean', 'max') as $i => $type) {
-            $content .= ($i ? '<br><br>' : '') . "<table class='meta tabular'>\n<thead>\n";
+            $content .= ($i ? '<br><br>' : '') . "<div style='text-align:center'><table class='meta tabular'>\n<thead>\n";
             $content .= '<tr><th colspan="' . (count($workloads) + 1) . '">' . ($type == 'mean' ? 'Average' : 'Maximum') . " Response Time (ms)</th></tr>\n";
             $content .= '<tr><th rowspan="2" class="white">Block Size (KiB)</th><th colspan="' . count($workloads) . "\" class=\"white\">Read / Write Mix %</th></tr>\n<tr>";
             foreach($workloads as $rw) $content .= sprintf('<th>%s</th>', $rw);
@@ -143,7 +143,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
               }
               $content .= "</tr>\n";
             }
-            $content .= "</tbody>\n</table>"; 
+            $content .= "</tbody>\n</table></div>"; 
           }
         }
         // 3d plot
@@ -234,7 +234,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
       'Test Stimulus 1' => 'LAT Loop',
       '&nbsp;&nbsp;RW Mix' => 'Outer Loop',
       '&nbsp;&nbsp;Block Sizes' => 'Inner Loop',
-      '&nbsp;&nbsp;TOIO - TC/QD' => 'TC 1/QD 1',
+      '&nbsp;&nbsp;TOIO - TC/QD' => sprintf('TC %d/QD 1', count($this->options['target'])),
       '&nbsp;&nbsp;Steady State' => $this->wdpc !== NULL ? sprintf('%d - %d%s', $this->wdpcComplete - 4, $this->wdpcComplete, $this->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A',
       'Histogram' => 'N/A',
       '&nbsp;&nbsp;TOIO - TC/QD ' => 'N/A',
