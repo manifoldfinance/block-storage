@@ -18,6 +18,9 @@
  * Block storage test implementation for the Latency test
  */
 class BlockStorageTestLatency extends BlockStorageTest {
+  
+  const BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION = 12;
+  
   /**
    * Constructor is protected to implement the singleton pattern using 
    * the BlockStorageTest::getTestController static method
@@ -40,31 +43,128 @@ class BlockStorageTestLatency extends BlockStorageTest {
    */
   protected function getReportContent($section, $jobs, $dir) {
     $content = NULL;
+    $key = preg_match('/max/', $section) ? 'max' : 'mean';
     switch($section) {
       case 'ss-convergence-avg':
-        // TODO
-        break;
       case 'ss-convergence-max':
-        // TODO
+        $coords = array();
+        foreach(array_keys($this->fio['wdpc']) as $i) {
+          $job = isset($this->fio['wdpc'][$i]['jobs'][0]['jobname']) ? $this->fio['wdpc'][$i]['jobs'][0]['jobname'] : NULL;
+          if ($job && preg_match('/^x([0-9]+)\-0_100\-([0-9]+[mkb])\-/', $job, $m) && isset($this->fio['wdpc'][$i]['jobs'][0]['write'])) {
+            $bs = $m[2];
+            $label = sprintf('RW=0/100, BS=%s', $bs);
+            $round = $m[1]*1;
+            $latency = $this->getLatency($this->fio['wdpc'][$i]['jobs'][0], $key);
+            if (!isset($coords[$label])) $coords[$label] = array();
+            $coords[$label][] = array($round, $latency);
+          }
+        }
+        if ($coords) $content = $this->generateLineChart($dir, $section, $coords, 'Round', 'Time (ms)', NULL, array('yMin' => 0), TRUE, FALSE, 2);
         break;
       case 'ss-measurement':
-        // TODO
+        $coords = array();
+        $latencies = array();
+        foreach(array_keys($jobs) as $job) {
+          if (preg_match('/^x([0-9]+)\-0_100\-4k\-/', $job, $m) && isset($jobs[$job]['write'])) {
+            if (!isset($coords['Time (ms)'])) $coords['Time (ms)'] = array();
+            $round = $m[1]*1;
+            $coords['Time (ms)'][] = array($round, $this->getLatency($jobs[$job], $key));
+            $latencies[$round] = $this->getLatency($jobs[$job], $key);
+          }
+        }
+        if (isset($coords['Time (ms)'])) {
+          ksort($latencies);
+          $keys = array_keys($latencies);
+          $first = $keys[0];
+          $last = $keys[count($keys) - 1];
+          $avg = round(array_sum($latencies)/count($latencies), self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION);
+          $coords['Average'] = array(array($first, $avg), array($last, $avg));
+          $coords['110% Average'] = array(array($first, round($avg*1.1)), array($last, round($avg*1.1)));
+          $coords['90% Average'] = array(array($first, round($avg*0.9)), array($last, round($avg*0.9)));
+          $coords['Slope'] = array(array($first, $latencies[$first]), array($last, $latencies[$last]));
+          $settings = array();
+          // smaller to make room for ss determination table
+          $settings['height'] = 450;
+          $settings['lines'] = array(1 => "lt 1 lc rgb '#F15854' lw 3 pt 5",
+                                     2 => "lt 1 lc rgb '#555555' lw 3 pt -1",
+                                     3 => "lt 2 lc rgb '#555555' lw 3 pt -1",
+                                     4 => "lt 2 lc rgb '#555555' lw 3 pt -1",
+                                     5 => "lt 4 lc rgb '#555555' lw 3 pt -1");
+          $settings['nogrid'] = TRUE;
+          $settings['xMin'] = '10%';
+          $settings['yMin'] = '20%';
+          $content = $this->generateLineChart($dir, $section, $coords, 'Round', 'Time (ms)', NULL, $settings, TRUE, FALSE, 2);
+          // add ss determination table
+          if ($section == 'ss-determination') {
+            $content .= sprintf("\n<h3>Steady State Determination Data</h3><table class='meta ssDetermination'>\n<tr><td colspan='2'><label>Average Latency (ms):</label><span>%d</span></td></tr>", $this->ssData['average']);
+            $content .= sprintf("\n<tr><td><label>Allowed Maximum Data Excursion:</label><span>%s</span></td><td><label>Measured Maximum Data Excursion:</label><span>%s</span></td></tr>", $this->ssData['maxDataExcursion'], $this->ssData['largestDataExcursion']);
+            $content .= sprintf("\n<tr><td><label>Allowed Maximum Slope Excursion:</label><span>%s</span></td><td><label>Measured Maximum Slope Excursion:</label><span>%s</span></td></tr>", $this->ssData['maxSlopeExcursion'], $this->ssData['largestSlopeExcursion']);
+            $content .= sprintf("\n<tr><td colspan='2'><label>Least Squares Linear Fit Formula:</label><span>%s</span></td></tr>", sprintf('%s * R + %s', $this->ssData['slope'], $this->ssData['yIntercept']));
+            $content .= "\n</table>";
+          }
+        }
         break;
       case 'tabular':
-        // TODO
-        break;
-      case '2d-plot-1024':
-        // TODO
-        break;
       case '3d-plot-avg':
-        // TODO
-        break;
       case '3d-plot-max':
-        // TODO
+        $workloads = array();
+        $blockSizes = array();
+        $table = array();
+        foreach(array_keys($jobs) as $job) {
+          if (preg_match('/^x[0-9]+\-([0-9]+)_([0-9]+)\-([0-9]+[mkb])\-/', $job, $m) && isset($jobs[$job]['write'])) {
+            $rw = $m[1] . '/' . $m[2];
+            $bs = $m[3];
+            if (!in_array($rw, $workloads)) $workloads[] = $rw;
+            if (!in_array($bs, $blockSizes)) $blockSizes[] = $bs;
+            if (!isset($table[$bs])) $table[$bs] = array();
+            if (!isset($table[$bs][$rw])) $table[$bs][$rw] = array();
+            foreach(array('mean', 'max') as $type) {
+              if (!isset($table[$bs][$rw][$type])) $table[$bs][$rw][$type] = array();
+              $table[$bs][$rw][$type][] = $this->getLatency($jobs[$job], $type);
+            }
+          }
+        }
+        $workloads = array_reverse($workloads);
+        $blockSizes = array_reverse($blockSizes);
+        // tabular
+        if ($table && $section == 'tabular') {
+          $content = '';
+          foreach(array('mean', 'max') as $i => $type) {
+            $content .= ($i ? '<br><br>' : '') . "<table class='meta tabular'>\n<thead>\n";
+            $content .= '<tr><th colspan="' . (count($workloads) + 1) . '">' . ($type == 'mean' ? 'Average' : 'Maximum') . " Response Time (ms)</th></tr>\n";
+            $content .= '<tr><th rowspan="2" class="white">Block Size (KiB)</th><th colspan="' . count($workloads) . "\" class=\"white\">Read / Write Mix %</th></tr>\n<tr>";
+            foreach($workloads as $rw) $content .= sprintf('<th>%s</th>', $rw);
+            $content .= "</tr>\n</thead>\n<tbody>\n";
+            foreach($blockSizes as $bs) {
+              $content .= sprintf('<tr><th>%s</th>', $bs);
+              foreach($workloads as $rw) {
+                $latency = isset($table[$bs][$rw][$type]) ? $table[$bs][$rw][$type] : NULL;
+                $content .= sprintf('<td>%s</td>', $latency ? round(array_sum($latency)/count($latency), self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION) : '');
+              }
+              $content .= "</tr>\n";
+            }
+            $content .= "</tbody>\n</table>"; 
+          }
+        }
+        // 3d plot
+        else if ($table) {
+          $workloads = array_reverse($workloads);
+          $series = array();
+          $settings = array('xAxis' => array('categories' => $blockSizes, 'title' => array('text' => 'Block Size (KiB)')),
+                            'yAxis' => array('labels' => array('format' => '{value:,.2f}'), 'min' => 0, 'title' => array('text' => 'Time (ms)')));
+          $stack = 0;
+          foreach($blockSizes as $x => $bs) {
+            foreach($workloads as $y => $rw) {
+              if ($latency = isset($table[$bs][$rw][$key]) ? round(array_sum($table[$bs][$rw][$key])/count($table[$bs][$rw][$key]), self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION) : NULL) {
+                if (!isset($series[$y])) $series[$y] = array('data' => array(), 'name' => $rw, 'stack' => $stack++);
+                $series[$y]['data'][] = array('x' => $x, 'y' => $latency);
+              }
+            }
+          }
+          $content = $this->generate3dChart($section, $series, $settings, 'R/W Mix', 2);
+        }
         break;
     }
-    // TODO: remove
-    $content = $section;
     return $content;
   }
 
@@ -92,7 +192,16 @@ class BlockStorageTestLatency extends BlockStorageTest {
    * @return array
    */
   protected function getSetupParameters() {
-    // TODO
+    return array(
+      'AR Segments' => 'N/A',
+      'Pre Condition 1' => $this->wipc ? 'SEQ 128K W' : 'None',
+      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD 1', $this->wipcThreads()) : 'N/A',
+      '&nbsp;&nbsp;Duration' => $this->wipc ? sprintf('%dX %s Capacity%s', $this->options['precondition_passes'], $this->deviceTargets ? 'Device' : 'Volume', $this->options['active_range'] < 100 ? ' (' . $this->options['active_range'] . '% AR)' : '') : 'N/A',
+      'Pre Condition 2' => 'LAT Loop',
+      '&nbsp;&nbsp;TOIO - TC/QD ' => 'TC 1/QD 1',
+      '&nbsp;&nbsp;SS Rouds' => $this->wdpc !== NULL ? sprintf('%d - %d', $this->wdpcComplete - 4, $this->wdpcComplete) : 'N/A',
+      'Notes' => $this->wdpc === FALSE ? sprintf('SS NOT ACHIEVED', $this->wdpcComplete) : ''
+    );
   }
 
   /**
@@ -105,10 +214,10 @@ class BlockStorageTestLatency extends BlockStorageTest {
     $subtitle = NULL;
     switch($section) {
       case '3d-plot-max':
-        $subtitle = 'LAT - 0.5,4,8KiB x R, 65:35, W';
+        $subtitle = 'LAT - 0.5, 4, 8KiB x R, 65:35, W';
         break;
       default:
-        $subtitle = 'LATENCY - Response Time OIO=1'
+        $subtitle = 'LATENCY - Response Time OIO=1';
         break;
     }
     return $subtitle;
@@ -121,7 +230,16 @@ class BlockStorageTestLatency extends BlockStorageTest {
    * @return array
    */
   protected function getTestParameters() {
-    // TODO
+    return array(
+      'Test Stimulus 1' => 'LAT Loop',
+      '&nbsp;&nbsp;RW Mix' => 'Outer Loop',
+      '&nbsp;&nbsp;Block Sizes' => 'Inner Loop',
+      '&nbsp;&nbsp;TOIO - TC/QD' => 'TC 1/QD 1',
+      '&nbsp;&nbsp;Steady State' => $this->wdpc !== NULL ? sprintf('%d - %d%s', $this->wdpcComplete - 4, $this->wdpcComplete, $this->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A',
+      'Histogram' => 'N/A',
+      '&nbsp;&nbsp;TOIO - TC/QD ' => 'N/A',
+      'Note ' => ''
+    );
   }
     
   /**
@@ -135,10 +253,87 @@ class BlockStorageTestLatency extends BlockStorageTest {
    */
   public function wdpc() {
     $status = NULL;
-    $verbose = isset($this->options['verbose']) && $this->options['verbose'];
-    BlockStorageTest::printMsg(sprintf('Initiating workload dependent preconditioning and steady state for LATENCY test'), $verbose, __FILE__, __LINE__);
-    // TODO
+    BlockStorageTest::printMsg(sprintf('Initiating workload dependent preconditioning and steady state for LATENCY test'), $this->verbose, __FILE__, __LINE__);
+    $max = $this->options['ss_rounds'];
+    $ssMetrics = array();
+    $blockSizes = $this->filterBlocksizes(array('8k', '4k', '512b'));
+    $lastBlockSize = $blockSizes[count($blockSizes) - 1];
+    $workloads = $this->filterWorkloads(array('100/0', '65/35', '0/100'));
+    
+    for($x=1; $x<=$max; $x++) {
+      foreach($workloads as $rw) {
+        $pieces = explode('/', $rw);
+        $read = $pieces[0]*1;
+        $write = $pieces[1]*1;
+        $rwmixread = 100 - $write;
+        foreach($blockSizes as $bs) {
+          $name = sprintf('x%d-%s-%s-rand', $x, str_replace('/', '_', $rw), $bs);
+          BlockStorageTest::printMsg(sprintf('Executing random IO test iteration for round %d of %d, rw ratio %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
+          $params = array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'time_based' => FALSE, 'numjobs' => count($this->options['target']), 'iodepth' => 1);
+          if ($read == 100) $params['rw'] = 'randread';
+          else if ($write == 100) $params['rw'] = 'randwrite';
+          else {
+            $params['rw'] = 'randwrite';
+            $params['rwmixread'] = $rwmixread;
+          }
+          if ($fio = $this->fio($params, 'wdpc')) {
+            BlockStorageTest::printMsg(sprintf('Random IO test iteration for round %d of %d, rw ratio %s and block size %s was successful', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
+            $results = $this->fio['wdpc'][count($this->fio['wdpc']) - 1];
+          }
+          else {
+            BlockStorageTest::printMsg(sprintf('Random IO test iteration for round %d of %d, rw ratio %s and block size %s failed', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__, TRUE);
+            break;
+          }
+          if ($rw == '0/100' && $bs == '4k') {
+            $latency = $this->getLatency($results['jobs'][0]);
+            BlockStorageTest::printMsg(sprintf('Added Latency metric %s ms for steady state verification', $latency), $this->verbose, __FILE__, __LINE__);
+            $ssMetrics[$x] = $latency;
+          }
+          // check for steady state
+          if ($x >= 5 && $rw == '0/100' && $bs == $lastBlockSize) {
+            $metrics = array();
+            for($i=4; $i>=0; $i--) $metrics[$x-$i] = $ssMetrics[$x-$i];
+            BlockStorageTest::printMsg(sprintf('Test round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using 4k write latency metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
+            if ($this->isSteadyState($metrics, $x)) {
+              BlockStorageTest::printMsg(sprintf('Steady state achieved - testing will stop'), $this->verbose, __FILE__, __LINE__);
+              $status = TRUE;
+            }
+            else BlockStorageTest::printMsg(sprintf('Steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
+            
+            // end of the line => last test round and steady state not achieved
+            if ($x == $max && $status === NULL) $status = FALSE;
+          }
+          if (!$fio || $status !== NULL) break;
+        }
+        if (!$fio || $status !== NULL) break;
+      }
+      if (!$fio || $status !== NULL) break;
+    }
+    // set wdpc attributes
+    $this->wdpc = $status;
+    $this->wdpcComplete = $x;
+    $this->wdpcIntervals = count($workloads)*count($blockSizes);
+    
     return $status;
+  }
+  
+  /**
+   * returns the latency metric in milliseconds from the $job specified
+   * @param array $job the job to return latency for
+   * @param string $type the type of latency to return (mean, min, max)
+   * @return float
+   */
+  private function getLatency($job, $type='mean') {
+    $latency = NULL;
+    if (isset($job['write']) || isset($job['read'])) {
+      // both read and write - return mean of the two
+      if (isset($job['write']['lat'][$type]) && $job['write']['lat'][$type] > 0 && isset($job['read']['lat'][$type]) && $job['read']['lat'][$type] > 0) $latency = ($job['write']['lat'][$type] + $job['read']['lat'][$type])/2;
+      else if (isset($job['write']['lat'][$type]) && $job['write']['lat'][$type] > 0) $latency = $job['write']['lat'][$type];
+      else if (isset($job['read']['lat'][$type]) && $job['read']['lat'][$type] > 0) $latency = $job['read']['lat'][$type];
+      // convert from microseconds to milliseconds
+      if ($latency) $latency = round($latency/1000, self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION);
+    }
+    return $latency;
   }
   
 }

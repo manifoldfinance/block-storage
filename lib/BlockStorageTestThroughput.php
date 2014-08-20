@@ -198,24 +198,18 @@ class BlockStorageTestThroughput extends BlockStorageTest {
    * @return array
    */
   protected function getReportSections() {
-    if ($this->bs == '128k') {
-      return array(
-        'ss-convergence-write-128' => 'Throughput Test - SS Convergence - Write 128KiB',
-        'ss-convergence-read-128' => 'Throughput Test - SS Convergence - Read 128KiB',
-        'ss-measurement-128' => 'Steady State Measurement Window - SEQ/128 KiB',
-        'tabular-128' => 'Throughput -All RW Mix &amp; BS - Tabular Data 128KiB',
-        '2d-plot-128' => 'Throughput -All RW Mix &amp; BS - 2D Plot 128KiB'
-      );
-    }
-    else if ($this->bs == '1024k') {
-      return array(
-        'ss-convergence-write-1024' => 'Throughput Test - SS Convergence - Write 1024KiB',
-        'ss-convergence-read-1024' => 'Throughput Test - SS Convergence - Read 1024 KiB',
-        'ss-measurement-1024' => 'Steady State Measurement Window - SEQ/1024 KiB',
-        'tabular-1024' => 'Throughput - All RW Mix &amp; BS - Tabular Data 1024KiB',
-        '2d-plot-1024' => 'Throughput - All RW Mix &amp; BS - 2D Plot 1024KiB',
-      );
-    }
+    return array(
+      'ss-convergence-write-1024' => 'Throughput Test - SS Convergence - Write 1024KiB',
+      'ss-convergence-read-1024' => 'Throughput Test - SS Convergence - Read 1024 KiB',
+      'ss-measurement-1024' => 'Steady State Measurement Window - SEQ/1024 KiB',
+      'tabular-1024' => 'Throughput - All RW Mix &amp; BS - Tabular Data 1024KiB',
+      '2d-plot-1024' => 'Throughput - All RW Mix &amp; BS - 2D Plot 1024KiB',
+      'ss-convergence-write-128' => 'Throughput Test - SS Convergence - Write 128KiB',
+      'ss-convergence-read-128' => 'Throughput Test - SS Convergence - Read 128KiB',
+      'ss-measurement-128' => 'Steady State Measurement Window - SEQ/128 KiB',
+      'tabular-128' => 'Throughput -All RW Mix &amp; BS - Tabular Data 128KiB',
+      '2d-plot-128' => 'Throughput -All RW Mix &amp; BS - 2D Plot 128KiB'
+    );
   }
   
   /**
@@ -228,7 +222,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
     return array(
       'AR Segments' => 'N/A',
       'Pre Condition 1' => $this->wipc ? 'SEQ 128K W' : 'None',
-      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']) : 'N/A',
+      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD 1', $this->wipcThreads()) : 'N/A',
       '&nbsp;&nbsp;Duration' => $this->wipc ? sprintf('%dX %s Capacity%s', $this->options['precondition_passes'], $this->deviceTargets ? 'Device' : 'Volume', $this->options['active_range'] < 100 ? ' (' . $this->options['active_range'] . '% AR)' : '') : 'N/A',
       'Pre Condition 2' => 'SEQ 128K W',
       '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']),

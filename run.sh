@@ -279,7 +279,6 @@ ARGUMENTS:
                                           'target' devices or volumes are 
                                           specified, latency tests are 
                                           performed sequentially
-                                          NOT YET IMPLEMENTED
                               wsat:       Write Saturation Test - measures how 
                                           drives respond to continuous 4k 
                                           random writes over time and total GB 

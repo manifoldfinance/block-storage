@@ -265,6 +265,7 @@ abstract class BlockStorageTest {
       if (!isset($settings['plotOptions'])) $settings['plotOptions'] = array();
       if (!isset($settings['plotOptions']['column'])) $settings['plotOptions']['column'] = array();
       if (!isset($settings['plotOptions']['column']['depth'])) $settings['plotOptions']['column']['depth'] = 35;
+      if (!isset($settings['plotOptions']['column']['pointWidth'])) $settings['plotOptions']['column']['pointWidth'] = $settings['plotOptions']['column']['depth'];
       $settings['plotOptions']['column']['stacking'] = TRUE;
       $settings['plotOptions']['column']['grouping'] = FALSE;
       if (!isset($settings['plotOptions']['series'])) $settings['plotOptions']['series'] = array();
@@ -376,9 +377,11 @@ abstract class BlockStorageTest {
    * histogram. If TRUE, $coords should represent all of the y values for a 
    * given X. The $coords hash key will be used as the X label and the value(s) 
    * rendered using a clustered histogram (grouped column chart)
+   * @param int $yFloatPrec optional Y floating point precision - if not 
+   * specified, will be assumed to be non-floating point
    * @return string
    */
-  protected final function generateLineChart($dir, $section, $coords, $xlabel=NULL, $ylabel=NULL, $title=NULL, $settings=NULL, $html=TRUE, $histogram=FALSE) {
+  protected final function generateLineChart($dir, $section, $coords, $xlabel=NULL, $ylabel=NULL, $title=NULL, $settings=NULL, $html=TRUE, $histogram=FALSE, $yFloatPrec=NULL) {
     BlockStorageTest::printMsg(sprintf('Generating line chart in %s for test %s and section %s with %d coords', $dir, $this->test, $section, count($coords)), $this->verbose, __FILE__, __LINE__);
     
     $chart = NULL;
@@ -485,7 +488,8 @@ abstract class BlockStorageTest {
       }
       fwrite($fp, "set autoscale keepfix\n");
       fwrite($fp, "set decimal locale\n");
-      fwrite($fp, "set format y \"%'10.0f\"\n");
+      if (!is_numeric($yFloatPrec)) $yFloatPrec = 0;
+      fwrite($fp, "set format y \"%'10.${yFloatPrec}f\"\n");
       fwrite($fp, "set format x \"%'10.0f\"\n");
       if ($xlabel) fwrite($fp, sprintf("set xlabel \"%s\"\n", $xlabel));
       if ($xMin != $xMax) fwrite($fp, sprintf("set xrange [%d:%d]\n", $xMin, $xMax));
@@ -534,7 +538,7 @@ abstract class BlockStorageTest {
           fwrite($fp, sprintf("%s u %d:%d t \"%s\" ls %d", $i > 0 ? ", \\\n\"\"" : '', ($i*2)+1, ($i*2)+2, $key, $colorPtr));
           $colorPtr++;
           if ($colorPtr > count($colors)) $colorPtr = 1;
-        } 
+        }
       }
       
       fclose($fp);
@@ -622,7 +626,12 @@ abstract class BlockStorageTest {
       exec(sprintf('cp %s/font.css %s/', $reportsDir, $tdir));
       exec(sprintf('cp %s/font.ttf %s/', $reportsDir, $tdir));
       
+      $lastTest = NULL;
       foreach(array_keys($controllers) as $n) {
+        if ($lastTest != $controllers[$n]->test) {
+          $lastTest = $controllers[$n]->test;
+          $testPageNum = 0;
+        }
         if (count($controllers[$n]->fio) && $controllers[$n]->wdpcComplete && $controllers[$n]->wdpcIntervals && isset($controllers[$n]->fio['wdpc'])) {
           $ssStart = isset($controllers[$n]->fio['wdpc']) ? ($controllers[$n]->wdpcComplete - 5)*$controllers[$n]->wdpcIntervals : NULL;
           BlockStorageTest::printMsg(sprintf('Generating %s reports in directory %s using steady state start index %d', $controllers[$n]->test, $dir, $ssStart), $verbose, __FILE__, __LINE__);
@@ -660,7 +669,6 @@ abstract class BlockStorageTest {
               else break;
             }
             
-            $testPageNum = 0;
             $sections = $controllers[$n]->getReportSections();
             BlockStorageTest::printMsg(sprintf('Rendering report sections: %s', implode(', ', array_keys($sections))), $verbose, __FILE__, __LINE__);
             foreach($sections as $section => $label) {
@@ -1548,7 +1556,7 @@ abstract class BlockStorageTest {
       'ss_rounds' => array('min' => 5, 'max' => 100),
       'ss_verification' => array('min' => 1, 'max' => 100),
       'target' => array('required' => TRUE, 'write' => TRUE),
-      'test' => array('option' => array('iops', 'throughput', 'latency', 'wsat', 'hir', 'xsr', 'ecw', 'dirth'), 'required' => TRUE),
+      'test' => array('option' => array('iops', 'throughput', 'latency'), 'required' => TRUE),
       'threads' => array('min' => 1),
       'threads_per_target_max' => array('min' => 1),
       'timeout' => array('min' => 3600),
@@ -1582,7 +1590,7 @@ abstract class BlockStorageTest {
     if (!$noprecondition) {
       BlockStorageTest::printMsg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). This may take a while...', $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
       for($i=1; $i<=$this->options['precondition_passes']; $i++) {
-        $opts = array('blocksize' => $bs, 'rw' => 'write');
+        $opts = array('blocksize' => $bs, 'rw' => 'write', 'iodepth' => 1, 'numjobs' => $this->wipcThreads());
         BlockStorageTest::printMsg(sprintf('Attempting workload independent precondition pass %d of %d', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
         if ($this->fio($opts, 'wipc')) {
           $this->wipc = TRUE;
@@ -1595,6 +1603,15 @@ abstract class BlockStorageTest {
       }
     }
     return $this->wipc;
+  }
+  
+  /**
+   * Returns the total number of threads to use for workload independent 
+   * preconditioning
+   * @return int
+   */
+  protected final function wipcThreads() {
+    return count($this->options['target']) < $this->options['threads_total'] ? count($this->options['target']) : $this->options['threads_total'];
   }
   
   /**
