@@ -1483,7 +1483,7 @@ abstract class BlockStorageTest {
    */
   public static function validateFio($options) {
     $fio = trim(shell_exec($options['fio'] . ' --version 2>&1'));
-    return preg_match('/^fio\-2/', $fio) || preg_match('/^2/', $fio) ? TRUE : FALSE;
+    return preg_match('/^fio\-2\.[1-9]/', $fio) || preg_match('/^2\.[1-9]/', $fio) ? TRUE : FALSE;
   }
   
   /**
