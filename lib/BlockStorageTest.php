@@ -360,6 +360,7 @@ abstract class BlockStorageTest {
    *   height: the graph height
    *   lines:     optional line styles (indexed by line #)
    *   nogrid:    don't add y axis grid lines
+   *   nokey:     don't show the plot key/legend
    *   nolinespoints: don't use linespoints
    *   xFloatPrec: x float precision
    *   xLogscale: use logscale for the x axis
@@ -491,7 +492,7 @@ abstract class BlockStorageTest {
       if (is_array($settings)) {
         foreach($settings as $key => $setting) {
           // special settings
-          if (in_array($key, array('height', 'lines', 'nogrid', 'nolinespoints', 'xLogscale', 'xMin', 'xMax', 'xTics', 'xFloatPrec', 'yFloatPrec', 'yLogscale', 'yMin', 'yMax', 'yTics'))) continue;
+          if (in_array($key, array('height', 'lines', 'nogrid', 'nokey', 'nolinespoints', 'xLogscale', 'xMin', 'xMax', 'xTics', 'xFloatPrec', 'yFloatPrec', 'yLogscale', 'yMin', 'yMax', 'yTics'))) continue;
           fwrite($fp, "${setting}\n");
         }
       }
@@ -510,7 +511,7 @@ abstract class BlockStorageTest {
         else if (!$yFloatPrec) fwrite($fp, sprintf("set ytics %d, %d, %d\n", $yMin, $yStep, $yMax));
       }
       if ($title) fwrite($fp, sprintf("set title \"%s\"\n", $title));
-      fwrite($fp, "set key reverse Left outside\n");
+      if (!isset($settings['nokey'])) fwrite($fp, "set key outside center top horizontal reverse\n");
       fwrite($fp, "set grid\n");
       fwrite($fp, sprintf("set style data lines%s\n", !isset($settings['nolinespoints']) || !$settings['nolinespoints'] ? 'points' : ''));
       
