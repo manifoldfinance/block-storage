@@ -1613,7 +1613,8 @@ abstract class BlockStorageTest {
    * @return int
    */
   protected final function wipcThreads() {
-    return count($this->options['target']) < $this->options['threads_total'] ? count($this->options['target']) : $this->options['threads_total'];
+    // return count($this->options['target']) < $this->options['threads_total'] ? count($this->options['target']) : $this->options['threads_total'];
+    return 1;
   }
   
   /**
