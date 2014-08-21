@@ -356,7 +356,7 @@ variables (e.g. `export bm_param_test=iops`)
 DEPENDENCIES
 This benchmark suite uses the following packages:
 
-  fio         Performs actual testing - version 2.0+ required
+  fio         Performs actual testing - version 2.1+ required
   gnuplot     Generates graphs per the SNIA test specification. These graphs
               are used in the PDF report
   hdparm      Used for ATA secure erase (when supported)
