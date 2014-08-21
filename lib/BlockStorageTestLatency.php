@@ -59,7 +59,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
             $coords[$label][] = array($round, $latency);
           }
         }
-        if ($coords) $content = $this->generateLineChart($dir, $section, $coords, 'Round', 'Time (ms)', NULL, array('yMin' => 0), TRUE, FALSE, 2);
+        if ($coords) $content = $this->generateLineChart($dir, $section, $coords, 'Round', 'Time (ms)', NULL, array('yFloatPrec' => 2, 'yMin' => 0));
         break;
       case 'ss-measurement':
         $coords = array();
@@ -93,7 +93,8 @@ class BlockStorageTestLatency extends BlockStorageTest {
           $settings['nogrid'] = TRUE;
           $settings['xMin'] = '10%';
           $settings['yMin'] = '20%';
-          $content = $this->generateLineChart($dir, $section, $coords, 'Round', 'Time (ms)', NULL, $settings, TRUE, FALSE, 2);
+          $settings['yFloatPrec'] = 2;
+          $content = $this->generateLineChart($dir, $section, $coords, 'Round', 'Time (ms)', NULL, $settings);
           // add ss determination table
           if ($section == 'ss-determination') {
             $content .= sprintf("\n<h3>Steady State Determination Data</h3><table class='meta ssDetermination'>\n<tr><td colspan='2'><label>Average Latency (ms):</label><span>%d</span></td></tr>", $this->ssData['average']);

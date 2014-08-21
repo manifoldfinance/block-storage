@@ -64,6 +64,12 @@ abstract class BlockStorageTest {
   private $purgeMethods = array();
   
   /**
+   * sub-classes may override this attribute value to eliminate the workload
+   * independent pre-conditioning step
+   */
+  protected $skipWipc = FALSE;
+  
+  /**
    * used to store steady state data
    */
   protected $ssData = array();
@@ -354,12 +360,15 @@ abstract class BlockStorageTest {
    *   height: the graph height
    *   lines:     optional line styles (indexed by line #)
    *   nogrid:    don't add y axis grid lines
+   *   nolinespoints: don't use linespoints
+   *   xFloatPrec: x float precision
    *   xLogscale: use logscale for the x axis
    *   xMin:      min value for the x axis tics - may be a percentage relative to 
    *              the lowest value
    *   xMax:      max value for the x axis tics - may be a percentage relative to 
    *              the highest value
    *   xTics:     the number of x tics to show (default 8)
+   *   yFloatPrec: y float precision
    *   yLogscale: use logscale for the y axis
    *   yMin:      min value for the x axis tics - may be a percentage relative to 
    *              the lowest value
@@ -377,11 +386,9 @@ abstract class BlockStorageTest {
    * histogram. If TRUE, $coords should represent all of the y values for a 
    * given X. The $coords hash key will be used as the X label and the value(s) 
    * rendered using a clustered histogram (grouped column chart)
-   * @param int $yFloatPrec optional Y floating point precision - if not 
-   * specified, will be assumed to be non-floating point
    * @return string
    */
-  protected final function generateLineChart($dir, $section, $coords, $xlabel=NULL, $ylabel=NULL, $title=NULL, $settings=NULL, $html=TRUE, $histogram=FALSE, $yFloatPrec=NULL) {
+  protected final function generateLineChart($dir, $section, $coords, $xlabel=NULL, $ylabel=NULL, $title=NULL, $settings=NULL, $html=TRUE, $histogram=FALSE) {
     BlockStorageTest::printMsg(sprintf('Generating line chart in %s for test %s and section %s with %d coords', $dir, $this->test, $section, count($coords)), $this->verbose, __FILE__, __LINE__);
     
     $chart = NULL;
@@ -389,6 +396,8 @@ abstract class BlockStorageTest {
     $dfile = sprintf('%s/%s-%s.dat', $dir, $this->test, $section);
     if (is_array($coords) && ($fp = fopen($script, 'w')) && ($df = fopen($dfile, 'w'))) {
       $colors = $this->getGraphColors();
+      $xFloatPrec = isset($settings['xFloatPrec']) && is_numeric($settings['xFloatPrec']) ? $settings['xFloatPrec'] : 0;
+      $yFloatPrec = isset($settings['yFloatPrec']) && is_numeric($settings['yFloatPrec']) ? $settings['yFloatPrec'] : 0;
       
       // just one array of tuples
       if (isset($coords[0])) $coords[''] = array($coords);
@@ -482,19 +491,18 @@ abstract class BlockStorageTest {
       if (is_array($settings)) {
         foreach($settings as $key => $setting) {
           // special settings
-          if (in_array($key, array('height', 'lines', 'nogrid', 'xLogscale', 'xMin', 'xMax', 'xTics', 'yLogscale', 'yMin', 'yMax', 'yTics'))) continue;
+          if (in_array($key, array('height', 'lines', 'nogrid', 'nolinespoints', 'xLogscale', 'xMin', 'xMax', 'xTics', 'xFloatPrec', 'yFloatPrec', 'yLogscale', 'yMin', 'yMax', 'yTics'))) continue;
           fwrite($fp, "${setting}\n");
         }
       }
       fwrite($fp, "set autoscale keepfix\n");
       fwrite($fp, "set decimal locale\n");
-      if (!is_numeric($yFloatPrec)) $yFloatPrec = 0;
       fwrite($fp, "set format y \"%'10.${yFloatPrec}f\"\n");
-      fwrite($fp, "set format x \"%'10.0f\"\n");
+      fwrite($fp, "set format x \"%'10.${xFloatPrec}f\"\n");
       if ($xlabel) fwrite($fp, sprintf("set xlabel \"%s\"\n", $xlabel));
       if ($xMin != $xMax) fwrite($fp, sprintf("set xrange [%d:%d]\n", $xMin, $xMax));
       if (isset($settings['xLogscale'])) fwrite($fp, "set logscale x\n");
-      else if ($xMin != $xMax) fwrite($fp, sprintf("set xtics %d, %d, %d\n", $xMin, $xStep, $xMax));
+      else if ($xMin != $xMax && !$xFloatPrec) fwrite($fp, sprintf("set xtics %d, %d, %d\n", $xMin, $xStep, $xMax));
       if ($ylabel) fwrite($fp, sprintf("set ylabel \"%s\"\n", $ylabel));
       if (isset($yMin)) {
         fwrite($fp, sprintf("set yrange [%d:%d]\n", $yMin, $yMax));
@@ -504,7 +512,7 @@ abstract class BlockStorageTest {
       if ($title) fwrite($fp, sprintf("set title \"%s\"\n", $title));
       fwrite($fp, "set key reverse Left outside\n");
       fwrite($fp, "set grid\n");
-      fwrite($fp, "set style data linespoints\n");
+      fwrite($fp, sprintf("set style data lines%s\n", !isset($settings['nolinespoints']) || !$settings['nolinespoints'] ? 'points' : ''));
       
       # line styles
       fwrite($fp, "set border linewidth 1.5\n");
@@ -1557,7 +1565,7 @@ abstract class BlockStorageTest {
       'ss_rounds' => array('min' => 5, 'max' => 100),
       'ss_verification' => array('min' => 1, 'max' => 100),
       'target' => array('required' => TRUE, 'write' => TRUE),
-      'test' => array('option' => array('iops', 'throughput', 'latency'), 'required' => TRUE),
+      'test' => array('option' => array('iops', 'throughput', 'latency', 'wsat'), 'required' => TRUE),
       'threads' => array('min' => 1),
       'threads_per_target_max' => array('min' => 1),
       'timeout' => array('min' => 3600),
@@ -1588,7 +1596,7 @@ abstract class BlockStorageTest {
    * @return boolean
    */
   public final function wipc($bs='128k') {
-    $noprecondition = isset($this->options['noprecondition']) && $this->options['noprecondition'];
+    $noprecondition = $this->skipWipc || (isset($this->options['noprecondition']) && $this->options['noprecondition']);
     if (!$noprecondition) {
       BlockStorageTest::printMsg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). This may take a while...', $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
       for($i=1; $i<=$this->options['precondition_passes']; $i++) {
@@ -1604,6 +1612,8 @@ abstract class BlockStorageTest {
         }
       }
     }
+    else BlockStorageTest::printMsg(sprintf('Skipping workload independent preconditioning for test %s', $this->test), $this->verbose, __FILE__, __LINE__);
+    
     return $this->wipc;
   }
   

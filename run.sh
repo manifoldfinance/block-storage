@@ -282,8 +282,11 @@ ARGUMENTS:
                               wsat:       Write Saturation Test - measures how 
                                           drives respond to continuous 4k 
                                           random writes over time and total GB 
-                                          written (TGBW)
-                                          NOT YET IMPLEMENTED
+                                          written (TGBW). NOTE: this 
+                                          implementation uses the alternate 
+                                          steady state test method (1 minute SS
+                                          checks interspersed by 30 minute WSAT
+                                          test intervals)
                               hir:        Host Idle Recovery - observes whether 
                                           the devices utilizes background 
                                           garbage collection wherein 
