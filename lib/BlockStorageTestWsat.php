@@ -67,7 +67,7 @@ class BlockStorageTestWsat extends BlockStorageTest {
           if ($job && preg_match('/^x[0-9]+\-0_100\-4k\-rand\-([0-9]+)/', $job, $m) && isset($this->fio['wdpc'][$i]['jobs'][0]['write']['iops'])) {
             $x = $m[1]*1;
             $iops = $this->fio['wdpc'][$i]['jobs'][0]['write']['iops'];
-            $tgbw += (($this->fio['wdpc'][$i]['jobs'][0]['write']['io_bytes']/1024)/1024)/1024;
+            $tgbw += ($this->fio['wdpc'][$i]['jobs'][0]['write']['io_bytes']/1024)/1024;
             if (!isset($coords[$label])) $coords[$label] = array();
             $coords[$label][] = array($isTgbw ? round($tgbw, BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_ROUND_PRECISION) : $x, $iops);
           }
@@ -183,7 +183,7 @@ class BlockStorageTestWsat extends BlockStorageTest {
         if ($fio = $this->fio($params, 'wdpc')) {
           BlockStorageTest::printMsg(sprintf('Test %s was successful', $name), $this->verbose, __FILE__, __LINE__);
           $results = $this->fio['wdpc'][count($this->fio['wdpc']) - 1];
-          $tgbw += (($results['jobs'][0]['write']['io_bytes']/1024)/1024)/1024;
+          $tgbw += ($results['jobs'][0]['write']['io_bytes']/1024)/1024;
         }
         else {
           BlockStorageTest::printMsg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
