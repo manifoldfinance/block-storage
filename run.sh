@@ -293,7 +293,6 @@ ARGUMENTS:
                                           performance increases with the 
                                           introduction of host idle times 
                                           between periods of 4k random writes
-                                          NOT YET IMPLEMENTED
                               xsr:        Cross Stimulus Recovery - tests how 
                                           the device handles transitions from 
                                           large block sequential writes to 

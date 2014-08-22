@@ -1566,7 +1566,7 @@ abstract class BlockStorageTest {
       'ss_rounds' => array('min' => 5, 'max' => 100),
       'ss_verification' => array('min' => 1, 'max' => 100),
       'target' => array('required' => TRUE, 'write' => TRUE),
-      'test' => array('option' => array('iops', 'throughput', 'latency', 'wsat'), 'required' => TRUE),
+      'test' => array('option' => array('iops', 'throughput', 'latency', 'wsat', 'hir'), 'required' => TRUE),
       'threads' => array('min' => 1),
       'threads_per_target_max' => array('min' => 1),
       'timeout' => array('min' => 3600),
@@ -1615,7 +1615,7 @@ abstract class BlockStorageTest {
     }
     else BlockStorageTest::printMsg(sprintf('Skipping workload independent preconditioning for test %s', $this->test), $this->verbose, __FILE__, __LINE__);
     
-    return $this->wipc;
+    return $this->wipc || $this->skipWipc;
   }
   
   /**

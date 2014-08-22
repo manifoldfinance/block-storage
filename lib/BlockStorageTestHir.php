@@ -18,12 +18,181 @@
  * Block storage test implementation for the Host Idle Recovery test
  */
 class BlockStorageTestHir extends BlockStorageTest {
+  
+  /**
+   * test duration (secs) in wait test segment loops
+   */
+  const BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION = 5;
+  
+  /**
+   * size of wait test segment loops
+   */
+  const BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_SIZE = 360;
+  
   /**
    * Constructor is protected to implement the singleton pattern using 
    * the BlockStorageTest::getTestController static method
    * @param array $options the test options
    */
-  protected function BlockStorageTestHir($options) {}
+  protected function BlockStorageTestHir($options) {
+    $this->skipWipc = TRUE;
+  }
+  
+  /**
+   * this sub-class method should return the content associated with $section 
+   * using the $jobs given (or all jobs in $this->fio['wdpc']). Return value 
+   * should be HTML that can be imbedded into the report. The HTML may include 
+   * an image reference without any directory path (e.g. <img src="iops.png>")
+   * return NULL on error
+   * @param string $section the section identifier provided by 
+   * $this->getReportSections()
+   * @param array $jobs all fio job results occuring within the steady state 
+   * measurement window. This is a hash indexed by job name
+   * @param string $dir the directory where any images should be generated in
+   * @return string
+   */
+  protected function getReportContent($section, $jobs, $dir) {
+    $content = NULL;
+    switch($section) {
+      case 'precondition-iops':
+        $coords = array();
+        $label = 'Pre-Writes, BS=4K';
+        foreach(array_keys($this->fio['wdpc']) as $i) {
+          $job = isset($this->fio['wdpc'][$i]['jobs'][0]['jobname']) ? $this->fio['wdpc'][$i]['jobs'][0]['jobname'] : NULL;
+          if ($job && preg_match('/^x([0-9]+)\-0_100\-4k\-rand-n1\-?/', $job, $m) && isset($this->fio['wdpc'][$i]['jobs'][0]['write']['iops'])) {
+            $round = $m[1]*1;
+            $iops = $this->fio['wdpc'][$i]['jobs'][0]['write']['iops'];
+            if (!isset($coords[$label])) $coords[$label] = array();
+            $coords[$label][] = array($round, $iops);
+          }
+        }
+        if ($coords) $content = $this->generateLineChart($dir, $section, $coords, 'Round', 'IOPS', NULL, array('xMin' => 0, 'yMin' => 0));
+        break;
+      case 'precondition-ss-measurement':
+        $coords = array();
+        $iops = array();
+        foreach(array_keys($jobs) as $job) {
+          if (preg_match('/^x([0-9]+)\-0_100\-4k\-rand-n1\-?/', $job, $m) && isset($jobs[$job]['write']['iops'])) {
+            if (!isset($coords['IOPS'])) $coords['IOPS'] = array();
+            $round = $m[1]*1;
+            $coords['IOPS'][] = array($round, $jobs[$job]['write']['iops']);
+            $iops[$round] = $jobs[$job]['write']['iops'];
+          }
+        }
+        if (isset($coords['IOPS'])) {
+          ksort($iops);
+          $keys = array_keys($iops);
+          $first = $keys[0];
+          $last = $keys[count($keys) - 1];
+          $avg = round(array_sum($iops)/count($iops));
+          $coords['Average'] = array(array($first, $avg), array($last, $avg));
+          $coords['110% Average'] = array(array($first, round($avg*1.1)), array($last, round($avg*1.1)));
+          $coords['90% Average'] = array(array($first, round($avg*0.9)), array($last, round($avg*0.9)));
+          $coords['Slope'] = array(array($first, $iops[$first]), array($last, $iops[$last]));
+          $settings = array();
+          if ($section == 'ss-determination') {
+            // smaller to make room for ss determination table
+            $settings['height'] = 450;
+            $settings['lines'] = array(1 => "lt 1 lc rgb '#F15854' lw 3 pt 5",
+                                       2 => "lt 1 lc rgb '#555555' lw 3 pt -1",
+                                       3 => "lt 2 lc rgb '#555555' lw 3 pt -1",
+                                       4 => "lt 2 lc rgb '#555555' lw 3 pt -1",
+                                       5 => "lt 4 lc rgb '#555555' lw 3 pt -1");
+            $settings['nogrid'] = TRUE;
+            $settings['xMin'] = '10%';
+            $settings['yMin'] = '20%';
+          }
+          else $settings['yMin'] = 0;
+          $content = $this->generateLineChart($dir, $section, $coords, 'Round', 'IOPS', NULL, $settings);
+        }
+        break;
+      case 'iops-vs-time':
+        $coords = array();
+        $secs = 0;
+        $lastWait = NULL;
+        $waitCtr = 1;
+        foreach(array_keys($this->fio['wdpc']) as $i) {
+          $job = isset($this->fio['wdpc'][$i]['jobs'][0]['jobname']) ? $this->fio['wdpc'][$i]['jobs'][0]['jobname'] : NULL;
+          if ($job && preg_match('/^w([0-9]+)\-0_100\-4k\-rand\-([0-9]+)$/', $job, $m) && isset($this->fio['wdpc'][$i]['jobs'][0]['write']['iops'])) {
+            $x = $m[1]*1;
+            $wait = $m[2]*1;
+            if ($lastWait !== NULL && $lastWait != $wait) {
+              $secs += BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_SIZE*BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION;
+              $waitCtr++;
+            }
+            if ($x > 1) $secs += $wait;
+            $lastWait = $wait;
+            $label = sprintf('Wait State %d %d/%d', $waitCtr, BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION, $wait);
+            $iops = $this->fio['wdpc'][$i]['jobs'][0]['write']['iops'];
+            if (!isset($coords[$label])) $coords[$label] = array();
+            $coords[$label][] = array(round($secs/60, 2), $iops);
+            $secs += BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION;
+          }
+        }
+        if ($coords) $content = $this->generateLineChart($dir, $section, $coords, 'Time (Minutes)', 'IOPS', NULL, array('xFloatPrec' => 2, 'xMin' => 0, 'yMin' => 0));
+        break;
+    }
+    return $content;
+  }
+    
+  /**
+   * this sub-class method should return a hash identifiying the sections 
+   * associated with the test report. The key in the hash should be the 
+   * section identifier, and the value, the section title
+   * @return array
+   */
+  protected function getReportSections() {
+    return array(
+      'precondition-iops' => 'Pre Conditioning IOPS Plot',
+      'precondition-ss-measurement' => 'Pre Conditioning Steady State Measurement Plot',
+      'iops-vs-time' => 'IOPS v Time - All Wait States'
+    );
+  }
+  
+  /**
+   * this sub-class method should return a hash of setup parameters - these are
+   * label/value pairs displayed in the bottom 8 rows of the Set Up Parameters 
+   * columns in the report page headers
+   * @return array
+   */
+  protected function getSetupParameters() {
+    return array(
+      'Pre Condition 1' => 'RND/4KiB',
+      '&nbsp;&nbsp;TOIO - TC/QD' => sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']),
+      '&nbsp;&nbsp;SS Rounds' => $this->wdpc !== NULL ? sprintf('%d - %d', $this->wdpcComplete - 4, $this->wdpcComplete) : 'N/A',
+      'Pre Condition 2' => 'None',
+      '&nbsp;&nbsp;TOIO - TC/QD ' => '',
+      '&nbsp;&nbsp;SS Rouds' => ''
+    );
+  }
+  
+  /**
+   * this sub-class method should return the subtitle for a given test and 
+   * section
+   * @param string $section the section identifier to return the subtitle for
+   * @return string
+   */
+  protected function getSubtitle($section) {
+    return sprintf('RND 4KiB %ds Ws / Variable Wait States', BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION);
+  }
+  
+  /**
+   * this sub-class method should return a hash of test parameters - these are
+   * label/value pairs displayed in the bottom 8 rows of the Test Parameters 
+   * columns in the report page headers
+   * @return array
+   */
+  protected function getTestParameters() {
+    return array(
+      'Write Stimulus' => 'RND/4KiB',
+      '&nbsp;&nbsp;TOIO - TC/QD' => sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']),
+      '&nbsp;&nbsp;Durations' => BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION,
+      'Idle State' => 'Host Idle',
+      '&nbsp;&nbsp;TOIO - TC/QD ' => '',
+      '&nbsp;&nbsp;Durations ' => '5,10,15,25,50',
+      '&nbsp;&nbsp;Wait States' => '1,2,3,5,10'
+    );
+  }
     
   /**
    * Performs workload dependent preconditioning - this method must be 
@@ -36,9 +205,90 @@ class BlockStorageTestHir extends BlockStorageTest {
    */
   public function wdpc() {
     $status = NULL;
-    $verbose = isset($this->options['verbose']) && $this->options['verbose'];
-    BlockStorageTest::printMsg(sprintf('Initiating workload dependent preconditioning and steady state for HIR test'), $verbose, __FILE__, __LINE__);
-    // TODO
+    BlockStorageTest::printMsg(sprintf('Initiating workload dependent preconditioning and steady state for WSAT test'), $this->verbose, __FILE__, __LINE__);
+    $max = $this->options['ss_rounds'];
+    $ssMetrics = array();
+    $tgbw = 0;
+    
+    for($x=1; $x<=$max; $x++) {
+      for($n=1; $n<=30; $n++) {
+        $name = sprintf('x%d-0_100-4k-rand-n%d', $x, $n);
+        BlockStorageTest::printMsg(sprintf('Starting %d sec HIR 4k rand write preconditioning round %d of %d, test %d of %d [name=%s]', $this->options['wd_test_duration'], $x, $max, $n, 30, $name), $this->verbose, __FILE__, __LINE__);
+        $params = array('blocksize' => '4k', 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'rw' => 'randwrite', 'time_based' => FALSE);
+
+        if ($fio = $this->fio($params, 'wdpc')) {
+          BlockStorageTest::printMsg(sprintf('Test %s was successful', $name), $this->verbose, __FILE__, __LINE__);
+        }
+        else {
+          BlockStorageTest::printMsg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
+          break;
+        } 
+      }
+      
+      // add steady state metric
+      $idx = ($x - 1)*30;
+      if ($results = isset($this->fio['wdpc'][$idx]) ? $this->fio['wdpc'][$idx] : NULL) {
+        $iops = $results['jobs'][0]['write']['iops'];
+        BlockStorageTest::printMsg(sprintf('Added IOPS metric %d from preconditioning round %d of %d for HIR steady state verification', $iops, $x, $max), $this->verbose, __FILE__, __LINE__);
+        $ssMetrics[$x] = $iops;
+
+        // check for steady state at rounds 5+
+        if ($x >= 5) {
+          $metrics = array();
+          for($i=4; $i>=0; $i--) $metrics[$x-$i] = $ssMetrics[$x-$i];
+          BlockStorageTest::printMsg(sprintf('HIR preconditioning test %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using 4k write IOPS metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
+          if ($this->isSteadyState($metrics, $x)) {
+            BlockStorageTest::printMsg(sprintf('HIR steady state achieved - testing will stop'), $this->verbose, __FILE__, __LINE__);
+            $status = TRUE;
+          }
+          else BlockStorageTest::printMsg(sprintf('HIR steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
+
+          // end of the line => last test round and steady state not achieved
+          if ($x == $max && $status === NULL) $status = FALSE;
+        }
+      }
+      if (!$results || $status !== NULL) break;
+    }
+    // wait state segments
+    if ($status !== NULL) {
+      BlockStorageTest::printMsg(sprintf('HIR preconditioning complete - beginning wait state test segments'), $this->verbose, __FILE__, __LINE__);
+      foreach(array(5, 10, 15, 25, 50) as $wait) {
+        for($x=1; $x<=BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_SIZE; $x++) {
+          $name = sprintf('w%d-0_100-4k-rand-%d', $x, $wait);
+          BlockStorageTest::printMsg(sprintf('Starting %d sec HIR 4k rand write wait segment %d of %d [name=%s; wait=%dsec]', BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION, $x, BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_SIZE, $name, $wait), $this->verbose, __FILE__, __LINE__);
+          $params = array('blocksize' => '4k', 'name' => $name, 'runtime' => BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION, 'rw' => 'randwrite', 'time_based' => FALSE);
+          if ($fio = $this->fio($params, 'wdpc')) {
+            BlockStorageTest::printMsg(sprintf('Test %s was successful - sleeping for %d seconds', $name, $wait), $this->verbose, __FILE__, __LINE__);
+            sleep($wait);
+          }
+          else {
+            BlockStorageTest::printMsg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
+            break;
+          }
+        }
+        if (!$fio) break;
+        
+        // return to baseline using 1800 seconds of continuous 4k writes
+        for($x=1; $x<=BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_SIZE; $x++) {
+          $name = sprintf('x%d-baseline-0_100-4k-rand-%d', $x, $wait);
+          $params = array('blocksize' => '4k', 'name' => $name, 'runtime' => BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION, 'rw' => 'randwrite', 'time_based' => FALSE);
+          if ($fio = $this->fio($params, 'wdpc')) {
+            BlockStorageTest::printMsg(sprintf('Test %s was successful - sleeping for %d seconds', $name, $wait), $this->verbose, __FILE__, __LINE__);
+            sleep($wait);
+          }
+          else {
+            BlockStorageTest::printMsg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
+            break;
+          }
+        }
+      }
+    }
+    
+    // set wdpc attributes
+    $this->wdpc = $status;
+    $this->wdpcComplete = $x;
+    $this->wdpcIntervals = BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES;
+    
     return $status;
   }
   
