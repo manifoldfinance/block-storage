@@ -1127,19 +1127,19 @@ abstract class BlockStorageTest {
       }
       $options['threads'] *= 1;
       if ($options['threads'] <= 0) $options['threads'] = 1;
-      
-      // adjust for number of targets
-      if (isset($options['target']) && count($options['target']) > 1) {
-        $options['threads'] = round($options['threads']/count($options['target']));
-        if ($options['threads'] == 0) $options['threads'] = 1;
-      }
-      
-      // adjust for threads_per_target_max
-      if (isset($options['threads_per_target_max']) && $options['threads'] > $options['threads_per_target_max']) $options['threads'] = $options['threads_per_target_max'];
-      
-      $options['threads_total'] = $options['threads']*count($options['target']);
     }
-    else $options['threads_total'] = $options['threads'];
+    
+    // adjust threads for number of targets
+    if (isset($options['target']) && count($options['target']) > 1) {
+      $options['threads'] = round($options['threads']/count($options['target']));
+      if ($options['threads'] == 0) $options['threads'] = 1;
+    }
+    
+    // adjust for threads_per_target_max
+    if (isset($options['threads_per_target_max']) && $options['threads'] > $options['threads_per_target_max']) $options['threads'] = $options['threads_per_target_max'];
+    
+    $options['threads_total'] = $options['threads']*count($options['target']);
+    
     return $options;
   }
   
