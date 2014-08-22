@@ -121,6 +121,26 @@ abstract class BlockStorageTest {
   protected $wipc = FALSE;
   
   
+  /**
+   * adjusts a value to the best matching log scale for use on a graph
+   * @param float $val the value to adjust
+   * @param boolean $min adjust to minimum value?
+   * @return float
+   */
+  private static function adjustLogScale($val, $min=FALSE) {
+    $adjusted = NULL;
+    if (is_numeric($val) && $val >= 0) {
+      $adjusted = 1;
+      if ($min) {
+        while($val > $adjusted) $adjusted *= 10;
+        if ($adjusted > 1) $adjusted /= 10;
+      }
+      else {
+        while($val < $adjusted) $adjusted *= 10;
+      }
+    }
+    return $adjusted;
+  }
   
   /**
    * removes any skip_blocksize arguments from $blocksizes
@@ -501,12 +521,20 @@ abstract class BlockStorageTest {
       fwrite($fp, "set format y \"%'10.${yFloatPrec}f\"\n");
       fwrite($fp, "set format x \"%'10.${xFloatPrec}f\"\n");
       if ($xlabel) fwrite($fp, sprintf("set xlabel \"%s\"\n", $xlabel));
+      if (isset($settings['xLogscale'])) {
+        $xMin = BlockStorageTest::adjustLogScale($xMin, TRUE);
+        $xMax = BlockStorageTest::adjustLogScale($xMax);
+      }
       if ($xMin != $xMax) fwrite($fp, sprintf("set xrange [%d:%d]\n", $xMin, $xMax));
       if (isset($settings['xLogscale'])) fwrite($fp, "set logscale x\n");
       else if ($xMin != $xMax && !$xFloatPrec) fwrite($fp, sprintf("set xtics %d, %d, %d\n", $xMin, $xStep, $xMax));
       if ($ylabel) fwrite($fp, sprintf("set ylabel \"%s\"\n", $ylabel));
       if (isset($yMin)) {
-        fwrite($fp, sprintf("set yrange [%d:%d]\n", $yMin, $yMax));
+        if (isset($settings['yLogscale'])) {
+          $yMin = BlockStorageTest::adjustLogScale($yMin, TRUE);
+          $yMax = BlockStorageTest::adjustLogScale($yMax);
+        }
+        if ($yMin != $yMax) fwrite($fp, sprintf("set yrange [%d:%d]\n", $yMin, $yMax));
         if (isset($settings['yLogscale'])) fwrite($fp, "set logscale y\n");
         else if (!$yFloatPrec) fwrite($fp, sprintf("set ytics %d, %d, %d\n", $yMin, $yStep, $yMax));
       }
@@ -773,13 +801,33 @@ abstract class BlockStorageTest {
     $capacities = '';
     $purge = '';
     $volInfo = isset($this->options['meta_storage_vol_info']) ? $this->options['meta_storage_vol_info'] : '';
+    $attrs = array('capacity' => array(), 'purge' => array(), 'vol' => array());
     foreach($this->options['target'] as $target) {
       $capacity = $this->getFreeSpace($target);
-      $capacities .= sprintf('%s%s %sB', $capacities ? ', ' : '', $capacity >= 1024 ? round($capacity/1024, 2) : $capacity, $capacity >= 1024 ? 'G' : 'M');
-      $purge .= ($purge ? ', ' : '') . (isset($this->purgeMethods[$target]) ? BlockStorageTest::getPurgeMethodDesc($this->purgeMethods[$target]) : 'None');
+      $capacity = sprintf('%s %sB', $capacity >= 1024 ? round($capacity/1024, 2) : $capacity, $capacity >= 1024 ? 'G' : 'M');
+      $attrs['capacity'][$capacity] = TRUE;
+      $capacities .= sprintf('%s%s', $capacities ? ', ' : '', $capacity);
+      $pmethod = isset($this->purgeMethods[$target]) ? BlockStorageTest::getPurgeMethodDesc($this->purgeMethods[$target]) : 'None';
+      $attrs['purge'][$pmethod] = TRUE;
+      $purge .= ($purge ? ', ' : '') . $pmethod;
       if ($this->volumeTargets && !isset($this->options['meta_storage_vol_info'])) {
-        $volInfo .= ($volInfo ? ', ' : '') . $this->getFsType($target);
+        $vinfo = $this->getFsType($target);
+        $attrs['vol'][$vinfo] = TRUE;
+        $volInfo .= ($volInfo ? ', ' : '') . $vinfo;
       }
+    }
+    // show only a single value if they are all the same
+    if (count($attrs['capacity']) == 1) {
+      $keys = array_keys($attrs['capacity']);
+      $capacities = $keys[0];
+    }
+    if (count($attrs['purge']) == 1) {
+      $keys = array_keys($attrs['purge']);
+      $purge = $keys[0];
+    }
+    if (count($attrs['vol']) == 1) {
+      $keys = array_keys($attrs['vol']);
+      $volInfo = $keys[0];
     }
     $params = array(
       'Storage Config' => $this->options['meta_storage_config'],

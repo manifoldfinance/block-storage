@@ -26,7 +26,7 @@ class BlockStorageTestWsat extends BlockStorageTest {
   /**
    * rounding precision for TGBW numbers
    */
-  const BLOCK_STORAGE_TEST_WSAT_ROUND_PRECISION = 8;
+  const BLOCK_STORAGE_TEST_WSAT_ROUND_PRECISION = 6;
   
   /**
    * Constructor is protected to implement the singleton pattern using 
@@ -85,7 +85,7 @@ class BlockStorageTestWsat extends BlockStorageTest {
         
         $settings = array('nolinespoints' => TRUE, 'xMin' => 0, 'yMin' => $log ? 1 : 0);
         if ($log) $settings['yLogscale'] = TRUE;
-        if ($isTgbw) $settings['xFloatPrec'] = BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_ROUND_PRECISION;
+        if ($isTgbw && $tgbw < 1) $settings['xFloatPrec'] = BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_ROUND_PRECISION;
         if ($coords) $content = $this->generateLineChart($dir, $section, $coords, $xLabel, 'IOPS', NULL, $settings);
         break;
     }
@@ -177,7 +177,7 @@ class BlockStorageTestWsat extends BlockStorageTest {
       for($n=1; $n<=BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES; $n++) {
         $testNum = (($x-1)*BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES)+$n;
         $name = sprintf('x%d-0_100-4k-rand-%d', $x, $testNum);
-        BlockStorageTest::printMsg(sprintf('Starting %dsec 4k rand write test %d of %d [%d] for WSAT test iteration %d of %d [name=%s]. TGBW=%sGB', $this->options['wd_test_duration'], $n, BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES, $testNum, $x, $max, $name, round($tgbw, BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_ROUND_PRECISION)), $this->verbose, __FILE__, __LINE__);
+        BlockStorageTest::printMsg(sprintf('Starting %dsec 4k rand write test %d of %d [%d] for WSAT test iteration %d of %d [name=%s]. TGBW=%s GB', $this->options['wd_test_duration'], $n, BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES, $testNum, $x, $max, $name, round($tgbw, BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_ROUND_PRECISION)), $this->verbose, __FILE__, __LINE__);
         $params = array('blocksize' => '4k', 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'rw' => 'randwrite', 'time_based' => FALSE);
         
         if ($fio = $this->fio($params, 'wdpc')) {
