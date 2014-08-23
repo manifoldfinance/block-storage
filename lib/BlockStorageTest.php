@@ -522,8 +522,8 @@ abstract class BlockStorageTest {
       fwrite($fp, "set format x \"%'10.${xFloatPrec}f\"\n");
       if ($xlabel) fwrite($fp, sprintf("set xlabel \"%s\"\n", $xlabel));
       if (isset($settings['xLogscale'])) {
-        $xMin = BlockStorageTest::adjustLogScale($xMin, TRUE);
-        $xMax = BlockStorageTest::adjustLogScale($xMax);
+        if (!isset($settings['xMin'])) $xMin = BlockStorageTest::adjustLogScale($xMin, TRUE);
+        if (!isset($settings['xMax'])) $xMax = BlockStorageTest::adjustLogScale($xMax);
       }
       if ($xMin != $xMax) fwrite($fp, sprintf("set xrange [%d:%d]\n", $xMin, $xMax));
       if (isset($settings['xLogscale'])) fwrite($fp, "set logscale x\n");
@@ -531,8 +531,8 @@ abstract class BlockStorageTest {
       if ($ylabel) fwrite($fp, sprintf("set ylabel \"%s\"\n", $ylabel));
       if (isset($yMin)) {
         if (isset($settings['yLogscale'])) {
-          $yMin = BlockStorageTest::adjustLogScale($yMin, TRUE);
-          $yMax = BlockStorageTest::adjustLogScale($yMax);
+          if (!isset($settings['yMin'])) $yMin = BlockStorageTest::adjustLogScale($yMin, TRUE);
+          if (!isset($settings['yMax'])) $yMax = BlockStorageTest::adjustLogScale($yMax);
         }
         if ($yMin != $yMax) fwrite($fp, sprintf("set yrange [%d:%d]\n", $yMin, $yMax));
         if (isset($settings['yLogscale'])) fwrite($fp, "set logscale y\n");

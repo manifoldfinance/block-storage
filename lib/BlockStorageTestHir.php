@@ -287,7 +287,7 @@ class BlockStorageTestHir extends BlockStorageTest {
     // set wdpc attributes
     $this->wdpc = $status;
     $this->wdpcComplete = $x;
-    $this->wdpcIntervals = BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES;
+    $this->wdpcIntervals = 5*BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_SIZE;
     
     return $status;
   }
