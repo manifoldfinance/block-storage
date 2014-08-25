@@ -680,7 +680,7 @@ abstract class BlockStorageTest {
             if (isset($job['jobs'][0]['jobname']) && $i >= $ssStart) $ssJobs[$job['jobs'][0]['jobname']] = $job['jobs'][0];
           }
           
-          if (count($wdpcJobs) && count($ssJobs)) {
+          if (count($wdpcJobs)) {
             BlockStorageTest::printMsg(sprintf('Generating %s reports for %d wipc jobs, %d wdpc jobs and %d ss jobs', $controllers[$n]->test, count($wipcJobs), count($wdpcJobs), count($ssJobs)), $verbose, __FILE__, __LINE__);
             
             // use array to represent report header table (10 rows)
