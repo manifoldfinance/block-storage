@@ -875,7 +875,7 @@ abstract class BlockStorageTest {
       if ($bytes) $freeSpace *= 1048576;
     }
     
-    if ($freeSpace) BlockStorageTest::printMsg(sprintf('Target %s has %s MB free space [cmd=%s]', $target, $freeSpace, $cmd), $this->verbose, __FILE__, __LINE__);
+    if ($freeSpace) BlockStorageTest::printMsg(sprintf('Target %s has %s MB free space [cmd=%s]', $target, $bytes ? round($freeSpace/1048576) : $freeSpace, $cmd), $this->verbose, __FILE__, __LINE__);
     else {
       $freeSpace = NULL;
       BlockStorageTest::printMsg(sprintf('Unable to get free space for target %s using command: %s', $target, $cmd), $this->verbose, __FILE__, __LINE__, TRUE);
@@ -1489,8 +1489,8 @@ abstract class BlockStorageTest {
 
         // next try TRIM
         if (!$purged && !$rotational && !$notrim) {
-          BlockStorageTest::printMsg(sprintf('Attempting TRIM for volume %s', $volume), $this->verbose, __FILE__, __LINE__);
-          $cmd = sprintf(($this->deviceTargets ? 'blkdiscard' : 'fstrim') . '%s %s >/dev/null 2>&1; echo $?', $this->deviceTargets && isset($this->options['trim_offset_end']) && $this->options['trim_offset_end'] > 0 ? sprintf(' -o 0 -l %d', $target, BlockStorageTest::getFreeSpace($target, TRUE) - $this->options['trim_offset_end']) : '', $this->deviceTargets ? $target : $volume);
+          $cmd = sprintf(($this->deviceTargets ? 'blkdiscard' : 'fstrim') . '%s %s >/dev/null 2>&1; echo $?', $this->deviceTargets && isset($this->options['trim_offset_end']) && $this->options['trim_offset_end'] > 0 ? sprintf(' -o 0 -l %d', BlockStorageTest::getFreeSpace($target, TRUE) - $this->options['trim_offset_end']) : '', $this->deviceTargets ? $target : $volume);
+          BlockStorageTest::printMsg(sprintf('Attempting TRIM for volume %s using command %s', $volume, $cmd), $this->verbose, __FILE__, __LINE__);
           $ecode = trim(exec($cmd));
           if ($ecode > 0) BlockStorageTest::printMsg(sprintf('TRIM not supported or failed for target %s (exit code %d)', $target, $ecode), $this->verbose, __FILE__, __LINE__);
           else {
