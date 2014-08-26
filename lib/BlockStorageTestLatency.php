@@ -242,6 +242,32 @@ class BlockStorageTestLatency extends BlockStorageTest {
       'Note ' => ''
     );
   }
+  
+  /**
+   * This method should return job specific metrics as a single level hash of
+   * key/value pairs
+   * @return array
+   */
+  protected function jobMetrics() {
+    $metrics = array();
+    $jobs = $this->getSteadyStateJobs();
+    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 5;
+    foreach(array_keys($jobs) as $job) {
+      if (preg_match('/^x[0-9]+\-([0-9]+)_([0-9]+)\-([0-9]+[mkb])\-/', $job, $m) && isset($jobs[$job]['write'])) {
+        $key = sprintf('%s_%s_%s_', $m[3], $m[1], $m[2]);
+        foreach(array('mean', 'max') as $type) {
+          if (!isset($metrics[$key . $type])) $metrics[$key . $type] = array();
+          $metrics[$key . $type][] = $this->getLatency($jobs[$job], $type);
+        }
+      }
+    }
+    foreach($metrics as $key => $vals) {
+      if ($key != 'steady_state_start') {
+        $metrics[$key] = round(array_sum($vals)/count($vals), self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION);
+      }
+    }
+    return $metrics;
+  }
     
   /**
    * Performs workload dependent preconditioning - this method must be 

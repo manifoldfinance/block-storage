@@ -154,6 +154,24 @@ class BlockStorageTestWsat extends BlockStorageTest {
       '&nbsp;&nbsp;Time ' => 'N/A'
     );
   }
+  
+  /**
+   * This method should return job specific metrics as a single level hash of
+   * key/value pairs
+   * @return array
+   */
+  protected function jobMetrics() {
+    $metrics = array();
+    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 5;
+    if ($jobs = $this->getSteadyStateJobs()) {
+      $iops = array();
+      foreach(array_keys($jobs) as $job) {
+        if (isset($jobs[$job]['write']['iops'])) $iops[] = $jobs[$job]['write']['iops'];
+      }
+      if ($iops) $metrics['mean_iops'] = round(array_sum($iops)/count($iops));
+    }
+    return $metrics;
+  }
     
   /**
    * Performs workload dependent preconditioning - this method must be 

@@ -153,7 +153,7 @@ variables (e.g. `export bm_param_test=iops`)
                             nominal fee otherwise. See http://www.highcharts.com
                             for additional licensing information
                             
-* nojson                    Don't generate JSON fio output archive
+* nojson                    Don't generate JSON result or fio output files
                             
 * nopdfreport               Don't generate PDF version of test report - 
                             report.pdf. (wkhtmltopdf dependency removed if 
@@ -198,7 +198,7 @@ variables (e.g. `export bm_param_test=iops`)
                             `threads` * `threads_oio`. Per the SNIA test 
                             specification, this is a user definable parameter. 
                             For latency tests, this parameter is a fixed value
-                            of 1. Default value for this parameter is 16
+                            of 1. Default value for this parameter is 32
                             
 * output                    The output directory to use for writing test artifacts 
                             (JSON and reports). If not specified, the current 
@@ -359,7 +359,7 @@ This benchmark suite uses the following packages:
   gnuplot     Generates graphs per the SNIA test specification. These graphs
               are used in the PDF report
   hdparm      Used for ATA secure erase (when supported)
-  php-cli     Scripting for test automation (/usr/bin/php)
+  php-cli     Scripting for automation of test logic (/usr/bin/php)
   util-linux  For TRIM operations using `blkdiscard` and `fstrim` (when 
               supported). Not required if test targets are rotational
   wkhtmltopdf Generates PDF version of report - download from 
@@ -372,6 +372,9 @@ Upon successful completion of testing, the following artifacts will be
 produced in the working directory ([test] replaced with one of the test 
 identifiers - e.g. report-iops.json):
 
+  [test].json        JSON formatted job results for [test]. Each test provides 
+                     different result metrics. This file contains a single 
+                     level hash of key/value pairs representing these metrics
   fio-[test].json    JSON formatted fio job results for [test]. Jobs are 
                      in run order each with a unique job name. For workload 
                      independent preconditioning, the job name uses the 
@@ -414,3 +417,227 @@ USAGE
 # independent preconditioning
 ./run.sh --target=/dev/sdc --test=iops --nopurge --noprecondition
 
+
+RESULTS OUTPUT
+Running parse.sh with the path to the results directory produces the output 
+below (e.g. ./parse.sh /path/to/results). _n will be an incrementing value for 
+each job. Test specific output is repeated for each fio job included in that 
+test.
+
+test_n=[test type]
+
+# IOPS test output (all random IO)
+test_iops_steady_state_start_n=[test iteration when steady state began]
+test_iops_1m_100_0_n=[mean 1m read IOPS in steady state]
+test_iops_128k_100_0_n=[mean 128k read IOPS in steady state]
+test_iops_64k_100_0_n=[mean 64k read IOPS in steady state]
+test_iops_32k_100_0_n=[mean 32k read IOPS in steady state]
+test_iops_16k_100_0_n=[mean 16k read IOPS in steady state]
+test_iops_8k_100_0_n=[mean 8k read IOPS in steady state]
+test_iops_4k_100_0_n=[mean 4k read IOPS in steady state]
+test_iops_512b_100_0_n=[mean 512b read IOPS in steady state]
+test_iops_1m_95_5_n=[mean 1m 95/5 rw IOPS in steady state]
+test_iops_128k_95_5_n=[mean 128k 95/5 rw IOPS in steady state]
+test_iops_64k_95_5_n=[mean 64k 95/5 rw IOPS in steady state]
+test_iops_32k_95_5_n=[mean 32k 95/5 rw IOPS in steady state]
+test_iops_16k_95_5_n=[mean 16k 95/5 rw IOPS in steady state]
+test_iops_8k_95_5_n=[mean 8k 95/5 rw IOPS in steady state]
+test_iops_4k_95_5_n=[mean 4k 95/5 rw IOPS in steady state]
+test_iops_512b_95_5_n=[mean 512b 95/5 rw IOPS in steady state]
+test_iops_1m_65_35_n=[mean 1m 65/35 rw IOPS in steady state]
+test_iops_128k_65_35_n=[mean 128k 65/35 rw IOPS in steady state]
+test_iops_64k_65_35_n=[mean 64k 65/35 rw IOPS in steady state]
+test_iops_32k_65_35_n=[mean 32k 65/35 rw IOPS in steady state]
+test_iops_16k_65_35_n=[mean 16k 65/35 rw IOPS in steady state]
+test_iops_8k_65_35_n=[mean 8k 65/35 rw IOPS in steady state]
+test_iops_4k_65_35_n=[mean 4k 65/35 rw IOPS in steady state]
+test_iops_512b_65_35_n=[mean 512b 65/35 rw IOPS in steady state]
+test_iops_1m_50_50_n=[mean 1m 50/50 rw IOPS in steady state]
+test_iops_128k_50_50_n=[mean 128k 50/50 rw IOPS in steady state]
+test_iops_64k_50_50_n=[mean 64k 50/50 rw IOPS in steady state]
+test_iops_32k_50_50_n=[mean 32k 50/50 rw IOPS in steady state]
+test_iops_16k_50_50_n=[mean 16k 50/50 rw IOPS in steady state]
+test_iops_8k_50_50_n=[mean 8k 50/50 rw IOPS in steady state]
+test_iops_4k_50_50_n=[mean 4k 50/50 rw IOPS in steady state]
+test_iops_512b_50_50_n=[mean 512b 50/50 rw IOPS in steady state]
+test_iops_1m_35_65_n=[mean 1m 35/65 rw IOPS in steady state]
+test_iops_128k_35_65_n=[mean 128k 35/65 rw IOPS in steady state]
+test_iops_64k_35_65_n=[mean 64k 35/65 rw IOPS in steady state]
+test_iops_32k_35_65_n=[mean 32k 35/65 rw IOPS in steady state]
+test_iops_16k_35_65_n=[mean 16k 35/65 rw IOPS in steady state]
+test_iops_8k_35_65_n=[mean 8k 35/65 rw IOPS in steady state]
+test_iops_4k_35_65_n=[mean 4k 35/65 rw IOPS in steady state]
+test_iops_512b_35_65_n=[mean 512b 35/65 rw IOPS in steady state]
+test_iops_1m_5_95_n=[mean 1m 5/95 rw IOPS in steady state]
+test_iops_128k_5_95_n=[mean 128k 5/95 rw IOPS in steady state]
+test_iops_64k_5_95_n=[mean 64k 5/95 rw IOPS in steady state]
+test_iops_32k_5_95_n=[mean 32k 5/95 rw IOPS in steady state]
+test_iops_16k_5_95_n=[mean 16k 5/95 rw IOPS in steady state]
+test_iops_8k_5_95_n=[mean 8k 5/95 rw IOPS in steady state]
+test_iops_4k_5_95_n=[mean 4k 5/95 rw IOPS in steady state]
+test_iops_512b_5_95_n=[mean 512b 5/95 rw IOPS in steady state]
+test_iops_1m_0_100_n=[mean 1m write IOPS in steady state]
+test_iops_128k_0_100_n=[mean 128k write IOPS in steady state]
+test_iops_64k_0_100_n=[mean 64k write IOPS in steady state]
+test_iops_32k_0_100_n=[mean 32k write IOPS in steady state]
+test_iops_16k_0_100_n=[mean 16k write IOPS in steady state]
+test_iops_8k_0_100_n=[mean 8k write IOPS in steady state]
+test_iops_4k_0_100_n=[mean 4k write IOPS in steady state]
+test_iops_512b_0_100_n=[mean 512b write IOPS in steady state]
+
+# Throughput test output (all sequential IO)
+test_throughput_steady_state_start_n=[test iteration when steady state began]
+test_throughput_1024k_100_0_n=[mean 1024k read throughput - MB/s]
+test_throughput_1024k_0_100_n=[mean 1024k write throughput - MB/s]
+test_throughput_128k_100_0_n=[mean 128k write throughput - MB/s]
+test_throughput_128k_0_100_n=[mean 128k write throughput - MB/s]
+
+# Latency test output (all milliseconds)
+test_latency_steady_state_start_n=[test iteration when steady state began]
+test_latency_8k_100_0_mean_n=[mean 8k read latency]
+test_latency_8k_100_0_max_n=[max 8k read latency]
+test_latency_4k_100_0_mean_n=[mean 4k read latency]
+test_latency_4k_100_0_max_n=[max 8k read latency]
+test_latency_512b_100_0_mean_n=[mean 512b read latency]
+test_latency_512b_100_0_max_n=[max 512b read latency]
+test_latency_8k_65_35_mean_n=[mean 8k 65/35 rw latency]
+test_latency_8k_65_35_max_n=[max 8k 65/35 rw latency]
+test_latency_4k_65_35_mean_n=[mean 4k 65/35 rw latency]
+test_latency_4k_65_35_max_n=[max 4k 65/35 rw latency]
+test_latency_512b_65_35_mean_n=[mean 512b 65/35 rw latency]
+test_latency_512b_65_35_max_n=[max 512b 65/35 rw latency]
+test_latency_8k_0_100_mean_n=[mean 8k write latency]
+test_latency_8k_0_100_max_n=[max 8k write latency]
+test_latency_4k_0_100_mean_n=[mean 4k write latency]
+test_latency_4k_0_100_max_n=[max 4k write latency]
+test_latency_512b_0_100_mean_n=[mean 512b write latency]
+test_latency_512b_0_100_max_n=[max 512b write latency]
+
+# WSAT test output
+test_wsat_steady_state_start_n=[test iteration when steady state began]
+test_wsat_iops=[mean 4k write IOPS in steady state]
+
+# HIR test output
+Test not implemented
+
+# XSR test output
+Test not implemented
+
+# ECW test output
+Test not implemented
+
+# DIRTH test output
+Test not implemented
+
+# fio test output
+jobname_n=[the job name - workload independent preconditioning use 'wipc' prefix]
+read_io_bytes_n=[read IO - KB]
+read_bw_n=[read bandwidth - KB/s]
+read_iops_n=[read IOPS]
+read_runtime_n=[read runtime - ms]
+read_slat_min_n=[min read submission latency - μs]
+read_slat_max_n=[max read submission latency - μs]
+read_slat_mean_n=[mean read submission latency - μs]
+read_slat_stddev_n=[read submission latency standard deviation - μs]
+read_clat_min_n=[min read completion latency - μs]
+read_clat_max_n=[max read completion latency - μs]
+read_clat_mean_n=[mean read completion latency - μs]
+read_clat_stddev_n=[read completion standard deviation - μs]
+read_clat_percentile_1_n=[1st percentile read completion latency - μs]
+read_clat_percentile_5_n=[5th percentile read completion latency - μs]
+read_clat_percentile_10_n=[10th percentile read completion latency - μs]
+read_clat_percentile_20_n=[20th percentile read completion latency - μs]
+read_clat_percentile_30_n=[30th percentile read completion latency - μs]
+read_clat_percentile_40_n=[40th percentile read completion latency - μs]
+read_clat_percentile_50_n=[50th percentile read completion latency - μs]
+read_clat_percentile_60_n=[60th percentile read completion latency - μs]
+read_clat_percentile_70_n=[70th percentile read completion latency - μs]
+read_clat_percentile_80_n=[80th percentile read completion latency - μs]
+read_clat_percentile_90_n=[90th percentile read completion latency - μs]
+read_clat_percentile_95_n=[95th percentile read completion latency - μs]
+read_clat_percentile_99_n=[99th percentile read completion latency - μs]
+read_clat_percentile_99_5_n=[99.5th percentile read completion latency - μs]
+read_clat_percentile_99_9_n=[99.9th percentile read completion latency - μs]
+read_clat_percentile_99_95_n=[99.95th percentile read completion latency - μs]
+read_clat_percentile_99_99_n=[99.99th percentile read completion latency - μs]
+read_lat_min_n=[min total read latency - μs]
+read_lat_max_n=[max total read latency - μs]
+read_lat_mean_n=[mean total read latency - μs]
+read_lat_stddev_n=[total read latency standard deviation - μs]
+read_bw_min_n=[min read bandwidth - KB/s]
+read_bw_max_n=[max read bandwidth - KB/s]
+read_bw_agg_n=[aggregate read bandwidth - KB/s]
+read_bw_mean_n=[mean read bandwidth - KB/s]
+read_bw_dev_n=[read bandwidth standard deviation - KB/s]
+write_io_bytes_n=[write IO - KB]
+write_bw_n=[write bandwidth - KB/s]
+write_iops_n=[write IOPS]
+write_runtime_n=[write runtime - ms]
+write_slat_min_n=[min write submission latency - μs]
+write_slat_max_n=[max write submission latency - μs]
+write_slat_mean_n=[mean write submission latency - μs]
+write_slat_stddev_n=[write submission latency standard deviation - μs]
+write_clat_min_n=[min write completion latency - μs]
+write_clat_max_n=[max write completion latency - μs]
+write_clat_mean_n=[mean write completion latency - μs]
+write_clat_stddev_n=[write completion standard deviation - μs]
+write_clat_percentile_1_n=[1st percentile write completion latency - μs]
+write_clat_percentile_5_n=[5th percentile write completion latency - μs]
+write_clat_percentile_10_n=[10th percentile write completion latency - μs]
+write_clat_percentile_20_n=[20th percentile write completion latency - μs]
+write_clat_percentile_30_n=[30th percentile write completion latency - μs]
+write_clat_percentile_40_n=[40th percentile write completion latency - μs]
+write_clat_percentile_50_n=[50th percentile write completion latency - μs]
+write_clat_percentile_60_n=[60th percentile write completion latency - μs]
+write_clat_percentile_70_n=[70th percentile write completion latency - μs]
+write_clat_percentile_80_n=[80th percentile write completion latency - μs]
+write_clat_percentile_90_n=[90th percentile write completion latency - μs]
+write_clat_percentile_95_n=[95th percentile write completion latency - μs]
+write_clat_percentile_99_n=[99th percentile write completion latency - μs]
+write_clat_percentile_99_5_n=[99.5th percentile write completion latency - μs]
+write_clat_percentile_99_9_n=[99.9th percentile write completion latency - μs]
+write_clat_percentile_99_95_n=[99.95th percentile write completion latency - μs]
+write_clat_percentile_99_99_n=[99.99th percentile write completion latency - μs]
+write_lat_min_n=[min total write latency - μs]
+write_lat_max_n=[max total write latency - μs]
+write_lat_mean_n=[mean total write latency - μs]
+write_lat_stddev_n=[total write latency standard deviation - μs]
+write_bw_min_n=[min write bandwidth - KB/s]
+write_bw_max_n=[max write bandwidth - KB/s]
+write_bw_agg_n=[aggregate write bandwidth - KB/s]
+write_bw_mean_n=[mean write bandwidth - KB/s]
+write_bw_dev_n=[write bandwidth standard deviation - KB/s]
+usr_cpu_n=[user CPU usage]
+sys_cpu_n=[system CPU usage]
+ctx_n=[CPU context switches]
+majf_n=[major page faults]
+minf_n=[minor page faults]
+iodepth_level_1_n=[distribution of IO with IO depth <= 1]
+iodepth_level_2_n=[distribution of IO with IO depth 2]
+iodepth_level_4_n=[distribution of IO with IO depth 4]
+iodepth_level_8_n=[distribution of IO with IO depth 8]
+iodepth_level_16_n=[distribution of IO with IO depth 16]
+iodepth_level_32_n=[distribution of IO with IO depth 32]
+iodepth_level_gte64_n=[distribution of IO with IO depth >= 64]
+latency_us_2_n=[distribution of IO with latency <= 2 microseconds]
+latency_us_4_n=[distribution of IO with latency >2 and <=4 microseconds]
+latency_us_10_n=[distribution of IO with latency >4 and <=10 microseconds]
+latency_us_20_n=[distribution of IO with latency >10 and <=20 microseconds]
+latency_us_50_n=[distribution of IO with latency >20 and <=50 microseconds]
+latency_us_100_n=[distribution of IO with latency >50 and <=100 microseconds]
+latency_us_250_n=[distribution of IO with latency >100 and <=250 microseconds]
+latency_us_500_n=[distribution of IO with latency >250 and <=500 microseconds]
+latency_us_750_n=[distribution of IO with latency >500 and <=750 microseconds]
+latency_us_1000_n=[distribution of IO with latency >750 and <=1000 microseconds]
+latency_ms_2_n=[distribution of IO with latency >1000 microseconds and <=2 milliseconds]
+latency_ms_4_n=[distribution of IO with latency >2 and <=4 milliseconds]
+latency_ms_10_n=[distribution of IO with latency >4 and <=10 milliseconds]
+latency_ms_20_n=[distribution of IO with latency >10 and <=20 milliseconds]
+latency_ms_50_n=[distribution of IO with latency >20 and <=50 milliseconds]
+latency_ms_100_n=[distribution of IO with latency >50 and <=100 milliseconds]
+latency_ms_250_n=[distribution of IO with latency >100 and <=250 milliseconds]
+latency_ms_500_n=[distribution of IO with latency >250 and <=500 milliseconds]
+latency_ms_750_n=[distribution of IO with latency >500 and <=750 milliseconds]
+latency_ms_1000_n=[distribution of IO with latency >750 and <=1000 milliseconds]
+latency_ms_2000_n=[distribution of IO with latency >1000 and <2000 milliseconds]
+latency_ms_gte2000_n=[distribution of IO with latency >=2000 milliseconds]

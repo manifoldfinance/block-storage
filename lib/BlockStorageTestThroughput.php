@@ -100,7 +100,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
             $job = isset($this->fio['wdpc'][$i]['jobs'][0]['jobname']) ? $this->fio['wdpc'][$i]['jobs'][0]['jobname'] : NULL;
             if ($job && preg_match("/^x([0-9]+)\-${workload}\-${bs}\-/", $job, $m) && isset($this->fio['wdpc'][$i]['jobs'][0][$key]['bw'])) {
               $round = $m[1]*1;
-              $bw = round($this->fio['wdpc'][$i]['jobs'][0][$key]['bw']/1024, 1);
+              $bw = round($this->fio['wdpc'][$i]['jobs'][0][$key]['bw']/1024, 2);
               $label = sprintf('BS=%s', $bs);
               if (!isset($coords[$label])) $coords[$label] = array();
               $coords[$label][] = array($round, $bw);
@@ -116,7 +116,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
             if (preg_match("/^x([0-9]+)\-0_100\-${bs}\-/", $job, $m) && isset($jobs[$job]['write']['bw'])) {
               if (!isset($coords['Throughput (MB/s)'])) $coords['Throughput (MB/s)'] = array();
               $round = $m[1]*1;
-              $bw = round($jobs[$job]['write']['bw']/1024, 1);
+              $bw = round($jobs[$job]['write']['bw']/1024, 2);
               $coords['Throughput (MB/s)'][] = array($round, $bw);
               $bandwidth[$round] = $bw;
             }
@@ -162,7 +162,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
               if (!in_array($rw, $workloads)) $workloads[] = $rw;
               if (!isset($table[$bs])) $table[$bs] = array();
               if (!isset($table[$bs][$rw])) $table[$bs][$rw] = array();
-              $table[$bs][$rw][] = round(($jobs[$job]['read']['bw'] + $jobs[$job]['write']['bw'])/1024, 1);
+              $table[$bs][$rw][] = round(($jobs[$job]['read']['bw'] + $jobs[$job]['write']['bw'])/1024, 2);
             }
           }
           $workloads = array_reverse($workloads);
@@ -174,7 +174,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
             $content .= "</tr>\n</thead>\n<tbody>\n";
             $content .= sprintf('<tr><th>%s</th>', $bs);
             foreach($workloads as $rw) {
-              $bw = isset($table[$bs][$rw]) ? round(array_sum($table[$bs][$rw])/count($table[$bs][$rw]), 1) : '';
+              $bw = isset($table[$bs][$rw]) ? round(array_sum($table[$bs][$rw])/count($table[$bs][$rw]), 2) : '';
               $content .= sprintf('<td>%s</td>', $bw);
             }
             $content .= "</tr>\n";
@@ -185,7 +185,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
             $coords = array();
             $settings = array('yMin' => 0);
             foreach($workloads as $rw) {
-              if ($bw = isset($table[$bs][$rw]) ? round(array_sum($table[$bs][$rw])/count($table[$bs][$rw]), 1) : NULL) {
+              if ($bw = isset($table[$bs][$rw]) ? round(array_sum($table[$bs][$rw])/count($table[$bs][$rw]), 2) : NULL) {
                 if (!isset($coords[$rw])) $coords[$rw] = array();
                 $coords[$rw][] = $bw;
               }
@@ -293,6 +293,33 @@ class BlockStorageTestThroughput extends BlockStorageTest {
       );
     }
   }
+  
+  /**
+   * This method should return job specific metrics as a single level hash of
+   * key/value pairs
+   * @return array
+   */
+  protected function jobMetrics() {
+    $metrics = array();
+    if ($this->bs !== NULL) {
+      if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 4;
+      $bs = $this->bs;
+      $jobs = $this->getSteadyStateJobs();
+      foreach(array_keys($jobs) as $job) {
+        if (preg_match("/^x[0-9]+\-([0-9]+)_([0-9]+)\-${bs}\-/", $job, $m) && (isset($jobs[$job]['read']['bw']) || isset($jobs[$job]['write']['bw']))) {
+          $key = sprintf('%s_%s_%s', $bs, $m[1], $m[2]);
+          if (!isset($metrics[$key])) $metrics[$key] = array();
+          $metrics[$key][] = round(($jobs[$job]['read']['bw'] + $jobs[$job]['write']['bw'])/1024, 2);
+        }
+      }
+      foreach($metrics as $key => $vals) {
+        if ($key != 'steady_state_start') {
+          $metrics[$key] = round(array_sum($vals)/count($vals), 2);
+        }
+      }
+    }
+    return $metrics;
+  }
     
   /**
    * Performs workload dependent preconditioning - this method must be 
@@ -331,7 +358,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
             break;
           }
           if ($rw == '0/100') {
-            $bw = round($results['jobs'][0]['write']['bw']/1024, 1);
+            $bw = round($results['jobs'][0]['write']['bw']/1024, 2);
             BlockStorageTest::printMsg(sprintf('Added BW metric %s MB/s for steady state verification', $bw), $this->verbose, __FILE__, __LINE__);
             $ssMetrics[$x] = $bw;
             // check for steady state

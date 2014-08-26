@@ -144,7 +144,7 @@ ARGUMENTS:
                             nominal fee otherwise. See http://www.highcharts.com
                             for additional licensing information
                             
---nojson                    Don't generate JSON fio output archive
+--nojson                    Don't generate JSON result or fio output files
 
 --nopdfreport               Don't generate PDF version of test report - 
                             report.pdf. (wkhtmltopdf dependency removed if 
@@ -197,7 +197,7 @@ ARGUMENTS:
                             'threads' * 'threads_oio'. Per the SNIA test 
                             specification, this is a user definable parameter. 
                             For latency tests, this parameter is a fixed value
-                            of 1. Default value for this parameter is 16
+                            of 1. Default value for this parameter is 32
 
 --secureerase_pswd          In order for ATA secure erase to be attempted for 
                             device purge (prior to test invocation), you must
@@ -348,6 +348,9 @@ Upon successful completion of testing, the following artifacts will be
 produced in the working directory ([test] replaced with one of the test 
 identifiers - e.g. report-iops.json):
 
+  [test].json        JSON formatted job results for [test]. Each test provides 
+                     different result metrics. This file contains a single 
+                     level hash of key/value pairs representing these metrics
   fio-[test].json    JSON formatted fio job results for [test]. Jobs are 
                      in run order each with a unique job name. For workload 
                      independent preconditioning, the job name uses the 

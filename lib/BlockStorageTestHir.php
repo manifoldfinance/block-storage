@@ -193,6 +193,17 @@ class BlockStorageTestHir extends BlockStorageTest {
       '&nbsp;&nbsp;Wait States' => '1,2,3,5,10'
     );
   }
+  
+  /**
+   * This method should return job specific metrics as a single level hash of
+   * key/value pairs
+   * @return array
+   */
+  protected function jobMetrics() {
+    $metrics = array();
+    // TODO
+    return $metrics;
+  }
     
   /**
    * Performs workload dependent preconditioning - this method must be 

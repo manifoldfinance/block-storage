@@ -353,12 +353,26 @@ abstract class BlockStorageTest {
         if ($fp = fopen($file, 'w')) {
           fwrite($fp, json_encode($json));
           fclose($fp);
+          BlockStorageTest::printMsg(sprintf('Successfully wrote fio metrics to output file %s for test %s', $file, $this->test), $this->verbose, __FILE__, __LINE__);
         }
         else BlockStorageTest::printMsg(sprintf('Unable to generate %s JSON output - cannot open file %s', $this->test, $file), $this->verbose, __FILE__, __LINE__, TRUE);
       }
       else BlockStorageTest::printMsg(sprintf('Unable to generate %s JSON output - no jobs', $this->test), $this->verbose, __FILE__, __LINE__, TRUE);
     }
     else BlockStorageTest::printMsg(sprintf('Unable to generate %s JSON output in directory %s. fio steps: %d; wdpcComplete=%d; wdpcIntervals=%d', $this->test, $dir, count($this->fio), $this->wdpcComplete, $this->wdpcIntervals), $this->verbose, __FILE__, __LINE__, TRUE);
+    
+    if (is_dir($dir) && is_writable($dir) && ($metrics = $this->jobMetrics())) {
+      $file = sprintf('%s/%s.json', $dir, $this->test);
+      // output file already exists - merge results
+      if (file_exists($file) && ($existing = json_decode(file_get_contents($file), TRUE))) $metrics = array_merge($existing, $metrics);
+      if ($fp = fopen($file, 'w')) {
+        fwrite($fp, json_encode($metrics));
+        fclose($fp);
+        BlockStorageTest::printMsg(sprintf('Successfully wrote job metrics to output file %s for test %s', $file, $this->test), $this->verbose, __FILE__, __LINE__);
+      }
+      else BlockStorageTest::printMsg(sprintf('Unable to write job metrics to output file %s for test %s', $file, $this->test), $this->verbose, __FILE__, __LINE__, TRUE);
+    }
+    else if (is_dir($dir) && is_writable($dir)) BlockStorageTest::printMsg(sprintf('Unable to retrieve job metrics for test %s', $this->test), $this->verbose, __FILE__, __LINE__, TRUE);
     
     return $generated;
   }
@@ -670,15 +684,10 @@ abstract class BlockStorageTest {
           $testPageNum = 0;
         }
         if (count($controllers[$n]->fio) && $controllers[$n]->wdpcComplete && $controllers[$n]->wdpcIntervals && isset($controllers[$n]->fio['wdpc'])) {
-          $ssStart = isset($controllers[$n]->fio['wdpc']) ? ($controllers[$n]->wdpcComplete - 5)*$controllers[$n]->wdpcIntervals : NULL;
-          BlockStorageTest::printMsg(sprintf('Generating %s reports in directory %s using steady state start index %d', $controllers[$n]->test, $dir, $ssStart), $verbose, __FILE__, __LINE__);
+          BlockStorageTest::printMsg(sprintf('Generating %s reports in directory %s', $controllers[$n]->test, $dir), $verbose, __FILE__, __LINE__);
           $wipcJobs = isset($controllers[$n]->fio['wipc']) ? $controllers[$n]->fio['wipc'] : array();
           $wdpcJobs = $controllers[$n]->fio['wdpc'];
-          $ssJobs = array();
-          
-          foreach($controllers[$n]->fio['wdpc'] as $i => $job) {
-            if (isset($job['jobs'][0]['jobname']) && $i >= $ssStart) $ssJobs[$job['jobs'][0]['jobname']] = $job['jobs'][0];
-          }
+          $ssJobs = $controllers[$n]->getSteadyStateJobs();
           
           if (count($wdpcJobs)) {
             BlockStorageTest::printMsg(sprintf('Generating %s reports for %d wipc jobs, %d wdpc jobs and %d ss jobs', $controllers[$n]->test, count($wipcJobs), count($wdpcJobs), count($ssJobs)), $verbose, __FILE__, __LINE__);
@@ -849,13 +858,21 @@ abstract class BlockStorageTest {
    * returns the amount of free space available on $target in megabytes
    * @param string $target the directory, volume or device to return free space
    * for
+   * @param boolean $bytes if TRUE, return value will be in bytes
    * @return int
    */
-  public function getFreeSpace($target) {
-    if ($this->deviceTargets) $freeSpace = (trim(shell_exec($cmd = sprintf('lsblk -n -o size -b %s', $target)))/1024)/1024;
+  public function getFreeSpace($target, $bytes=FALSE) {
+    if ($this->deviceTargets) {
+      $pieces = explode("\n", trim(shell_exec($cmd = sprintf('lsblk -n -o size -b %s', $target))));
+      if (isset($pieces[0]) && is_numeric($pieces[0])) {
+        $freeSpace = $pieces[0]*1;
+        if (!$bytes) $freeSpace /= 1048576;
+      }
+    }
     else {
       $freeSpace = substr(trim(shell_exec($cmd = sprintf('df -B M --output=avail %s | sed -e /Avail/d', $target))), 0, -1)*1;
       if (file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) $freeSpace += round((filesize($file)/1024)/1024);
+      if ($bytes) $freeSpace *= 1048576;
     }
     
     if ($freeSpace) BlockStorageTest::printMsg(sprintf('Target %s has %s MB free space [cmd=%s]', $target, $freeSpace, $cmd), $this->verbose, __FILE__, __LINE__);
@@ -1027,7 +1044,7 @@ abstract class BlockStorageTest {
       'meta_os_info' => BlockStorageTest::getMeta('os'),
       'meta_provider' => 'Not Specified',
       'meta_storage_config' => 'Not Specified',
-      'oio_per_thread' => 16,
+      'oio_per_thread' => 32,
       'output' => trim(shell_exec('pwd')),
       'precondition_passes' => 2,
       'ss_rounds' => 25,
@@ -1150,6 +1167,21 @@ abstract class BlockStorageTest {
    * @return array
    */
   protected abstract function getSetupParameters();
+  
+  /**
+   * returns steady state jobs for this test
+   * @return array
+   */
+  protected function getSteadyStateJobs() {
+    $ssStart = isset($this->fio['wdpc']) ? ($this->wdpcComplete - 5)*$this->wdpcIntervals : NULL;
+    $ssJobs = array();
+    
+    foreach($this->fio['wdpc'] as $i => $job) {
+      if (isset($job['jobs'][0]['jobname']) && $i >= $ssStart) $ssJobs[$job['jobs'][0]['jobname']] = $job['jobs'][0];
+    }
+    
+    return $ssJobs;
+  }
   
   /**
    * this sub-class method should return the subtitle for a given test and 
@@ -1287,6 +1319,13 @@ abstract class BlockStorageTest {
   }
   
   /**
+   * This method should return job specific metrics as a single level hash of
+   * key/value pairs
+   * @return array
+   */
+  protected abstract function jobMetrics();
+  
+  /**
    * this method creates an arguments hash containing the command line args as 
    * a where the key is the long argument name and the value is the value for
    * that argument. boolean arguments will automatically be converted to PHP bools
@@ -1360,6 +1399,41 @@ abstract class BlockStorageTest {
   }
   
   /**
+   * prints job result to stdout
+   * @param array $job the job (or job sub-element) to print
+   * @param string $dir the directory where results were written to
+   * @param string $test the test type
+   * @param string $suffix optional suffix
+   * @param string $prefix optional prefix
+   * @return boolean
+   */
+  public static function printJob(&$job, $dir, $test, $suffix=NULL, $prefix=NULL) {
+    $printed = FALSE;
+    if (is_array($job)) {
+      $printed = TRUE;
+      if ($prefix === NULL) printf("test%s=%s\n", $suffix ? '_' . $suffix : '', $test);
+      // print job specific results
+      if ($prefix === NULL && file_exists($file = sprintf('%s/%s.json', $dir, $test)) && ($json = json_decode(file_get_contents($file, TRUE)))) {
+        foreach($json as $key => $val) {
+          if (is_array($val)) BlockStorageTest::printJob($val, $dir, $test, $suffix, $test . '_' . $key);
+          else printf("test_%s_%s%s=%s\n", $test, $key, $suffix ? '_' . $suffix : '', $val);
+        }
+      }
+      foreach($job as $key => $val) {
+        // skip some fio metrics
+        if (in_array($key, array('groupid', 'latency_depth', 'latency_target', 'latency_percentile', 'latency_window')) || preg_match('/trim/', $key) || preg_match('/error/', $key)) continue;
+        
+        $key = str_replace('.', '_', str_replace('0000', '', str_replace('00000', '', str_replace('.000000', '', str_replace('<', 'lt', str_replace('<=', 'lte', str_replace('>', 'gt', str_replace('>=', 'gte', $key))))))));
+        if (preg_match('/0_00/', $key)) continue;
+        
+        if (is_array($val)) BlockStorageTest::printJob($val, $dir, $test, $suffix, sprintf('%s%s', $prefix ? $prefix . '_' : '', $key));
+        else printf("%s%s%s=%s\n", $prefix ? $prefix . '_' : '', $key, $suffix ? '_' . $suffix : '', $val);
+      }
+    }
+    return $printed;
+  }
+  
+  /**
    * Prints a message to stdout
    * @param string $msg the message to print
    * @param boolean $verbose whether or not verbose output mode is enabled. If 
@@ -1416,7 +1490,7 @@ abstract class BlockStorageTest {
         // next try TRIM
         if (!$purged && !$rotational && !$notrim) {
           BlockStorageTest::printMsg(sprintf('Attempting TRIM for volume %s', $volume), $this->verbose, __FILE__, __LINE__);
-          $cmd = sprintf(($this->deviceTargets ? 'blkdiscard' : 'fstrim') . '%s %s >/dev/null 2>&1; echo $?', $this->deviceTargets && isset($this->options['trim_offset_end']) && $this->options['trim_offset_end'] > 0 ? sprintf(' -o 0 -l `expr $(lsblk -n -o size -b %s) - %d`', $target, $this->options['trim_offset_end']) : '', $this->deviceTargets ? $target : $volume);
+          $cmd = sprintf(($this->deviceTargets ? 'blkdiscard' : 'fstrim') . '%s %s >/dev/null 2>&1; echo $?', $this->deviceTargets && isset($this->options['trim_offset_end']) && $this->options['trim_offset_end'] > 0 ? sprintf(' -o 0 -l %d', $target, BlockStorageTest::getFreeSpace($target, TRUE) - $this->options['trim_offset_end']) : '', $this->deviceTargets ? $target : $volume);
           $ecode = trim(exec($cmd));
           if ($ecode > 0) BlockStorageTest::printMsg(sprintf('TRIM not supported or failed for target %s (exit code %d)', $target, $ecode), $this->verbose, __FILE__, __LINE__);
           else {

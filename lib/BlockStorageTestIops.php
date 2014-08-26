@@ -250,7 +250,31 @@ class BlockStorageTestIops extends BlockStorageTest {
       '&nbsp;&nbsp;Steady State ' => 'N/A'
     );
   }
-    
+  
+  /**
+   * This method should return job specific metrics as a single level hash of
+   * key/value pairs
+   * @return array
+   */
+  protected function jobMetrics() {
+    $metrics = array();
+    $jobs = $this->getSteadyStateJobs();
+    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 5;
+    foreach(array_keys($jobs) as $job) {
+      if (preg_match('/^x[0-9]+\-([0-9]+)_([0-9]+)\-([0-9]+[mkb])\-/', $job, $m) && isset($jobs[$job]['write']['iops'])) {
+        $key = sprintf('%s_%s_%s', $m[3], $m[1], $m[2]);
+        if (!isset($metrics[$key])) $metrics[$key] = array();
+        $metrics[$key][] = $jobs[$job]['read']['iops'] + $jobs[$job]['write']['iops'];
+      }
+    }
+    foreach($metrics as $key => $vals) {
+      if ($key != 'steady_state_start') {
+        $metrics[$key] = round(array_sum($vals)/count($vals));
+      }
+    }
+    return $metrics;
+  }
+  
   /**
    * Performs workload dependent preconditioning - this method must be 
    * implemented by sub-classes. It should return one of the following 

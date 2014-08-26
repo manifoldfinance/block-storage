@@ -15,12 +15,12 @@
 
 if [ "$1" == "-h" ] || [ "$1" == "--help" ] ; then
   cat << EOF
-Usage: parse.sh [/path/to/fio-test.json]
+Usage: parse.sh [/path/to/result/files]
 
 Parses fio results files fio-[test].json and renders result metrics as 
-key/value pairs. For example: name1=x1-0_100-4k-rand-ssmw. Keys use an 
-incrementing numeric value for each job (e.g. name1=x1-0_100-4k-rand-ssmw, 
-name2=x2-0_100-4k-rand-ssmw).
+key/value pairs. For example: jobname_1=x1-0_100-4k-rand-ssmw. Keys use an 
+incrementing numeric value for each job (e.g. jobname_1=x1-0_100-4k-rand-ssmw, 
+jobname_2=x2-0_100-4k-rand-ssmw)
 
 
 EXIT CODES:
