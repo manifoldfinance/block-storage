@@ -579,14 +579,14 @@ abstract class BlockStorageTest {
       $colorPtr = 1;
       if ($histogram) {
         for($i=0; $i<$maxPoints; $i++) {
-          fwrite($fp, sprintf("%s u %d:xtic(1) ls %d notitle", $i > 0 ? ", \\\n\"\"" : '', $i+2, $colorPtr));
+          fwrite($fp, sprintf("%s every ::1 u %d:xtic(1) ls %d notitle", $i > 0 ? ", \\\n\"\"" : '', $i+2, $colorPtr));
           $colorPtr++;
           if ($colorPtr > count($colors)) $colorPtr = 1;
         }
       }
       else {
         foreach(array_keys($coords) as $i => $key) {
-          fwrite($fp, sprintf("%s u %d:%d t \"%s\" ls %d", $i > 0 ? ", \\\n\"\"" : '', ($i*2)+1, ($i*2)+2, $key, $colorPtr));
+          fwrite($fp, sprintf("%s every ::1 u %d:%d t \"%s\" ls %d", $i > 0 ? ", \\\n\"\"" : '', ($i*2)+1, ($i*2)+2, $key, $colorPtr));
           $colorPtr++;
           if ($colorPtr > count($colors)) $colorPtr = 1;
         }
