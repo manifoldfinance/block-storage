@@ -206,7 +206,30 @@ class BlockStorageTestHir extends BlockStorageTest {
    */
   protected function jobMetrics() {
     $metrics = array();
-    // TODO
+    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 4;
+    if ($jobs = $this->getSteadyStateJobs()) {
+      $iops = array();
+      foreach(array_keys($jobs) as $job) {
+        if (preg_match(sprintf('/^x([0-9]+)\-0_100\-4k\-rand-n%d/', BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_PRECONDITION_INTERVALS), $job, $m) && isset($jobs[$job]['write']['iops'])) {
+          $iops[] = $jobs[$job]['write']['iops'];
+        }
+      }
+      if ($iops) $metrics['steady_state_iops'] = round(array_sum($iops)/count($iops));
+    }
+    $iops = array();
+    foreach(array_keys($this->fio['wdpc']) as $i) {
+      $job = isset($this->fio['wdpc'][$i]['jobs'][0]['jobname']) ? $this->fio['wdpc'][$i]['jobs'][0]['jobname'] : NULL;
+      if ($job && preg_match('/^w([0-9]+)\-0_100\-4k\-rand\-([0-9]+)$/', $job, $m) && isset($this->fio['wdpc'][$i]['jobs'][0]['write']['iops'])) {
+        $wait = $m[2]*1;
+        if (!isset($iops[$wait])) $iops[$wait] = array();
+        $iops[$wait][] = $this->fio['wdpc'][$i]['jobs'][0]['write']['iops'];
+      }
+    }
+    if ($iops) {
+      foreach($iops as $wait => $vals) {
+        if ($vals) $metrics[sprintf('wait_%ds_iops', $wait)] = round(array_sum($vals)/count($vals));
+      }
+    }
     return $metrics;
   }
     

@@ -259,7 +259,7 @@ class BlockStorageTestIops extends BlockStorageTest {
   protected function jobMetrics() {
     $metrics = array();
     $jobs = $this->getSteadyStateJobs();
-    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 5;
+    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 4;
     foreach(array_keys($jobs) as $job) {
       if (preg_match('/^x[0-9]+\-([0-9]+)_([0-9]+)\-([0-9]+[mkb])\-/', $job, $m) && isset($jobs[$job]['write']['iops'])) {
         $key = sprintf('%s_%s_%s', $m[3], $m[1], $m[2]);

@@ -162,7 +162,7 @@ class BlockStorageTestWsat extends BlockStorageTest {
    */
   protected function jobMetrics() {
     $metrics = array();
-    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 5;
+    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 4;
     if ($jobs = $this->getSteadyStateJobs()) {
       $iops = array();
       foreach(array_keys($jobs) as $job) {

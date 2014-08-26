@@ -518,7 +518,13 @@ test_wsat_steady_state_start_n=[test iteration when steady state began]
 test_wsat_iops=[mean 4k write IOPS in steady state]
 
 # HIR test output
-Test not implemented
+test_hir_steady_state_start_n=[test iteration when steady state began]
+test_hir_steady_state_iops_n=[mean 4k rand write IOPS during steady state phase of preconditioning]
+test_hir_wait_5s_iops_n=[mean 4k rand write IOPS during testing with 5 second wait intervals]
+test_hir_wait_10s_iops_n=[mean 4k rand write IOPS during testing with 10 second wait intervals]
+test_hir_wait_15s_iops_n=[mean 4k rand write IOPS during testing with 15 second wait intervals]
+test_hir_wait_25s_iops_n=[mean 4k rand write IOPS during testing with 25 second wait intervals]
+test_hir_wait_50s_iops_n=[mean 4k rand write IOPS during testing with 50 second wait intervals]
 
 # XSR test output
 Test not implemented
