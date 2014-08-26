@@ -1380,7 +1380,11 @@ abstract class BlockStorageTest {
       if (isset($options[$key]) && !strpos($long, ':')) $options[$key] = $options[$key] === '0' ? FALSE : TRUE;
       // set array parameters
       if (is_array($arrayArgs)) {
-        if (isset($options[$key]) && in_array($key, $arrayArgs) && !is_array($options[$key])) $options[$key] = array($options[$key]);
+        if (isset($options[$key]) && in_array($key, $arrayArgs) && !is_array($options[$key])) {
+          $pieces = explode(',', $options[$key]);
+          $options[$key] = array();
+          foreach($pieces as $v) $options[$key][] = trim($v);
+        }
         else if (isset($options[$key]) && !in_array($key, $arrayArgs) && is_array($options[$key])) $options[$key] = $options[$key][0];
       }
       // remove empty values
