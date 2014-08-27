@@ -146,6 +146,8 @@ ARGUMENTS:
                             
 --nojson                    Don't generate JSON result or fio output files
 
+--noparsefio                Don't include fio results in parse.sh output
+
 --nopdfreport               Don't generate PDF version of test report - 
                             report.pdf. (wkhtmltopdf dependency removed if 
                             specified)

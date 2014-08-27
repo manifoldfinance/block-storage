@@ -329,6 +329,7 @@ abstract class BlockStorageTest {
   public function generateJson($dir=NULL, $suffix=NULL) {
     if (isset($this->options['nojson']) && $this->options['nojson']) return FALSE;
     
+    if (isset($this->options['noparsefio']) && $this->options['noparsefio']) exec(sprintf('touch %s/.noparsefio', $dir));
     $generated = FALSE;
     if (!$dir) $dir = $this->options['output'];
     if (is_dir($dir) && is_writable($dir) && count($this->fio) && $this->wdpcComplete && $this->wdpcIntervals) {
@@ -1079,6 +1080,7 @@ abstract class BlockStorageTest {
       'meta_test_sw:',
       'no3dcharts',
       'nojson',
+      'noparsefio',
       'nopdfreport',
       'noprecondition',
       'nopurge',
@@ -1409,9 +1411,10 @@ abstract class BlockStorageTest {
    * @param string $test the test type
    * @param string $suffix optional suffix
    * @param string $prefix optional prefix
+   * @param boolean $fio whether or not this if fio output
    * @return boolean
    */
-  public static function printJob(&$job, $dir, $test, $suffix=NULL, $prefix=NULL) {
+  public static function printJob(&$job, $dir, $test, $suffix=NULL, $prefix=NULL, $fio=TRUE) {
     $printed = FALSE;
     if (is_array($job)) {
       $printed = TRUE;
@@ -1419,19 +1422,21 @@ abstract class BlockStorageTest {
       // print job specific results
       if ($prefix === NULL && file_exists($file = sprintf('%s/%s.json', $dir, $test)) && ($json = json_decode(file_get_contents($file, TRUE)))) {
         foreach($json as $key => $val) {
-          if (is_array($val)) BlockStorageTest::printJob($val, $dir, $test, $suffix, $test . '_' . $key);
+          if (is_array($val)) BlockStorageTest::printJob($val, $dir, $test, $suffix, $test . '_' . $key, FALSE);
           else printf("test_%s_%s%s=%s\n", $test, $key, $suffix ? '_' . $suffix : '', $val);
         }
       }
-      foreach($job as $key => $val) {
-        // skip some fio metrics
-        if (in_array($key, array('ctx', 'groupid', 'latency_depth', 'latency_target', 'latency_percentile', 'latency_window')) || preg_match('/trim/', $key) || preg_match('/error/', $key)) continue;
-        
-        $key = str_replace('.', '_', str_replace('0000', '', str_replace('00000', '', str_replace('.000000', '', str_replace('<', 'lt', str_replace('<=', 'lte', str_replace('>', 'gt', str_replace('>=', 'gte', $key))))))));
-        if (preg_match('/0_00/', $key)) continue;
-        
-        if (is_array($val)) BlockStorageTest::printJob($val, $dir, $test, $suffix, sprintf('%s%s', $prefix ? $prefix . '_' : '', $key));
-        else printf("%s%s%s=%s\n", $prefix ? $prefix . '_' : '', $key, $suffix ? '_' . $suffix : '', $val);
+      if (!$fio || !file_exists(sprintf('%s/.noparsefio', $dir))) {
+        foreach($job as $key => $val) {
+          // skip some fio metrics
+          if (in_array($key, array('ctx', 'groupid', 'latency_depth', 'latency_target', 'latency_percentile', 'latency_window')) || preg_match('/trim/', $key) || preg_match('/error/', $key)) continue;
+
+          $key = str_replace('.', '_', str_replace('0000', '', str_replace('00000', '', str_replace('.000000', '', str_replace('<', 'lt', str_replace('<=', 'lte', str_replace('>', 'gt', str_replace('>=', 'gte', $key))))))));
+          if (preg_match('/0_00/', $key)) continue;
+
+          if (is_array($val)) BlockStorageTest::printJob($val, $dir, $test, $suffix, sprintf('%s%s', $prefix ? $prefix . '_' : '', $key));
+          else printf("%s%s%s=%s\n", $prefix ? $prefix . '_' : '', $key, $suffix ? '_' . $suffix : '', $val);
+        }
       }
     }
     return $printed;
