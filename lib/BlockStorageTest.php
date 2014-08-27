@@ -1425,7 +1425,7 @@ abstract class BlockStorageTest {
       }
       foreach($job as $key => $val) {
         // skip some fio metrics
-        if (in_array($key, array('groupid', 'latency_depth', 'latency_target', 'latency_percentile', 'latency_window')) || preg_match('/trim/', $key) || preg_match('/error/', $key)) continue;
+        if (in_array($key, array('ctx', 'groupid', 'latency_depth', 'latency_target', 'latency_percentile', 'latency_window')) || preg_match('/trim/', $key) || preg_match('/error/', $key)) continue;
         
         $key = str_replace('.', '_', str_replace('0000', '', str_replace('00000', '', str_replace('.000000', '', str_replace('<', 'lt', str_replace('<=', 'lte', str_replace('>', 'gt', str_replace('>=', 'gte', $key))))))));
         if (preg_match('/0_00/', $key)) continue;

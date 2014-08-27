@@ -425,6 +425,7 @@ each job. Test specific output is repeated for each fio job included in that
 test.
 
 test_n=[test type]
+TODO: threads/qd
 
 # IOPS test output (all random IO)
 test_iops_steady_state_start_n=[test iteration when steady state began]
@@ -615,7 +616,6 @@ write_bw_mean_n=[mean write bandwidth - KB/s]
 write_bw_dev_n=[write bandwidth standard deviation - KB/s]
 usr_cpu_n=[user CPU usage]
 sys_cpu_n=[system CPU usage]
-ctx_n=[CPU context switches]
 majf_n=[major page faults]
 minf_n=[minor page faults]
 iodepth_level_1_n=[distribution of IO with IO depth <= 1]

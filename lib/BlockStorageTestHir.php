@@ -266,7 +266,7 @@ class BlockStorageTestHir extends BlockStorageTest {
       }
       
       // add steady state metric
-      if ($results && $n == BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_PRECONDITION_INTERVALS) {
+      if ($results) {
         $iops = $results['jobs'][0]['write']['iops'];
         BlockStorageTest::printMsg(sprintf('Added IOPS metric %d from preconditioning round %d of %d for HIR steady state verification', $iops, $x, $max), $this->verbose, __FILE__, __LINE__);
         $ssMetrics[$x] = $iops;
