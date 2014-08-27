@@ -32,7 +32,7 @@ if (isset($argv[1]) && file_exists($argv[1])) {
         $njobs = count($results['jobs']);
         foreach($results['jobs'] as $i => $job) {
           $idx = $njobs ? $i+1 : '';
-          BlockStorageTest::printJob($job, $dir, $test, $idx);
+          BlockStorageTest::printJob($job, $dir, $test, $noparsefio ? NULL : $idx);
           $testsPrinted[$test] = TRUE;
           if ($noparsefio) break;
         }
