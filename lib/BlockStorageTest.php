@@ -1045,7 +1045,7 @@ abstract class BlockStorageTest {
       'meta_os_info' => BlockStorageTest::getMeta('os'),
       'meta_provider' => 'Not Specified',
       'meta_storage_config' => 'Not Specified',
-      'oio_per_thread' => 32,
+      'oio_per_thread' => 64,
       'output' => trim(shell_exec('pwd')),
       'precondition_passes' => 2,
       'ss_rounds' => 25,
