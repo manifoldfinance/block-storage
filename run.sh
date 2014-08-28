@@ -199,7 +199,7 @@ ARGUMENTS:
                             'threads' * 'threads_oio'. Per the SNIA test 
                             specification, this is a user definable parameter. 
                             For latency tests, this parameter is a fixed value
-                            of 1. Default value for this parameter is 32
+                            of 1. Default value for this parameter is 64
 
 --secureerase_pswd          In order for ATA secure erase to be attempted for 
                             device purge (prior to test invocation), you must

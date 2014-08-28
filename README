@@ -200,7 +200,7 @@ variables (e.g. `export bm_param_test=iops`)
                             `threads` * `threads_oio`. Per the SNIA test 
                             specification, this is a user definable parameter. 
                             For latency tests, this parameter is a fixed value
-                            of 1. Default value for this parameter is 32
+                            of 1. Default value for this parameter is 64
                             
 * output                    The output directory to use for writing test artifacts 
                             (JSON and reports). If not specified, the current 
