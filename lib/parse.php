@@ -22,7 +22,8 @@ require_once('BlockStorageTest.php');
 $status = 1;
 if (isset($argv[1]) && file_exists($argv[1])) {
   $dir = is_dir($argv[1]) ? $argv[1] : dirname($argv[1]);
-  $noparsefio = file_exists(sprintf('%s/.noparsefio', $dir));
+  $options = BlockStorageTest::getSerializedOptions($dir);
+  $noparsefio = isset($options['noparsefio']) && $options['noparsefio'];
   $testsPrinted = array();
   foreach(array('iops', 'throughput', 'latency', 'wsat', 'hir', 'xsr', 'ecw', 'dirth') as $test) {
     $files = $test == 'throughput' ? array(sprintf('%s/fio-%s-1024k.json', $dir, $test), sprintf('%s/fio-%s-128k.json', $dir, $test)) : array(sprintf('%s/fio-%s.json', $dir, $test));

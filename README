@@ -427,7 +427,13 @@ each job. Test specific output is repeated for each fio job included in that
 test.
 
 test_n=[test type]
-TODO: threads/qd
+targets=[targets - comma separated]
+targets_avg_gb=[average size (GB) per target]
+targets_num=[number of targets]
+targets_sizes=[sizes of targets (GB) - comma separated]
+threads_per_device=[threads per device - ignore for latency]
+threads_total=[total # of threads - ignore for latency]
+threads_oio=[Outstanding IO/QD per thread - ignore for latency]
 
 # IOPS test output (all random IO)
 test_iops_steady_state_start_n=[test iteration when steady state began]

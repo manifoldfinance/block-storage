@@ -32,6 +32,12 @@ abstract class BlockStorageTest {
   const BLOCK_STORAGE_TEST_FILE_NAME = 'fio-test';
   
   /**
+   * name of the file where serializes options should be written to for given 
+   * test iteration
+   */
+  const BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME = '.options';
+  
+  /**
    * free space buffer to use for volume type test targets
    */
   const BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER = 100;
@@ -329,7 +335,11 @@ abstract class BlockStorageTest {
   public function generateJson($dir=NULL, $suffix=NULL) {
     if (isset($this->options['nojson']) && $this->options['nojson']) return FALSE;
     
-    if (isset($this->options['noparsefio']) && $this->options['noparsefio']) exec(sprintf('touch %s/.noparsefio', $dir));
+    // serialize options
+    $fp = fopen(sprintf('%s/%s', $dir, BlockStorageTest::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME));
+    fwrite($fp, serialize($this->options));
+    fclose($fp);
+    
     $generated = FALSE;
     if (!$dir) $dir = $this->options['output'];
     if (is_dir($dir) && is_writable($dir) && count($this->fio) && $this->wdpcComplete && $this->wdpcIntervals) {
@@ -1163,6 +1173,16 @@ abstract class BlockStorageTest {
   }
   
   /**
+   * returns options from the serialized file where they are written when a 
+   * test completes
+   * @param string $dir the directory where results were written to
+   * @return array
+   */
+  public static function getSerializedOptions($dir) {
+    return unserialize(file_get_contents(sprintf('%s/%s', $dir, BlockStorageTest::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME)));
+  }
+  
+  /**
    * this sub-class method should return a hash of setup parameters - these are
    * label/value pairs displayed in the bottom 8 rows of the Set Up Parameters 
    * columns in the report page headers
@@ -1417,8 +1437,24 @@ abstract class BlockStorageTest {
   public static function printJob(&$job, $dir, $test, $suffix=NULL, $prefix=NULL, $fio=TRUE) {
     $printed = FALSE;
     if (is_array($job)) {
+      $options = BlockStorageTest::getSerializedOptions($dir);
       $printed = TRUE;
-      if ($prefix === NULL) printf("test%s=%s\n", $suffix ? '_' . $suffix : '', $test);
+      if ($prefix === NULL) {
+        printf("test%s=%s\n", $suffix ? '_' . $suffix : '', $test);
+        if (isset($options['targets'])) {
+          $sizes = array();
+          foreach($options['targets'] as $target) $sizes[$target] = round(BlockStorageTest::getFreeSpace($target)/1024);
+          printf("targets=%s\n", implode(',', $options['targets']));
+          printf("targets_avg_gb=%d\n", round(array_sum($sizes)/count($sizes)));
+          printf("targets_num=%d\n", count($options['targets']));
+          printf("targets_sizes=%s\n", implode(',', $sizes));
+        }
+        if (isset($options['threads'])) {
+          printf("threads_oio=%d\n", $options['oio_per_thread']);
+          printf("threads_per_device=%d\n", $options['threads']);
+          printf("threads_total=%d\n", $options['threads_total']);
+        }
+      }
       // print job specific results
       if ($prefix === NULL && file_exists($file = sprintf('%s/%s.json', $dir, $test)) && ($json = json_decode(file_get_contents($file, TRUE)))) {
         foreach($json as $key => $val) {
@@ -1426,7 +1462,7 @@ abstract class BlockStorageTest {
           else printf("test_%s_%s%s=%s\n", $test, $key, $suffix ? '_' . $suffix : '', $val);
         }
       }
-      if (!$fio || !file_exists(sprintf('%s/.noparsefio', $dir))) {
+      if (!$fio || !isset($options['noparsefio']) || !$options['noparsefio']) {
         foreach($job as $key => $val) {
           // skip some fio metrics
           if (in_array($key, array('ctx', 'groupid', 'latency_depth', 'latency_target', 'latency_percentile', 'latency_window')) || preg_match('/trim/', $key) || preg_match('/error/', $key)) continue;
