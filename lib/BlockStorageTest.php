@@ -335,13 +335,17 @@ abstract class BlockStorageTest {
   public function generateJson($dir=NULL, $suffix=NULL) {
     if (isset($this->options['nojson']) && $this->options['nojson']) return FALSE;
     
-    // serialize options
-    $fp = fopen(sprintf('%s/%s', $dir, BlockStorageTest::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME), 'w');
-    fwrite($fp, serialize($this->options));
-    fclose($fp);
-    
     $generated = FALSE;
     if (!$dir) $dir = $this->options['output'];
+    
+    // serialize options
+    $ofile = sprintf('%s/%s', $dir, BlockStorageTest::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME);
+    if (is_dir($dir) && is_writable($dir) && !file_exists($ofile)) {
+      $fp = fopen($ofile, 'w');
+      fwrite($fp, serialize($this->options));
+      fclose($fp); 
+    }
+    
     if (is_dir($dir) && is_writable($dir) && count($this->fio) && $this->wdpcComplete && $this->wdpcIntervals) {
       $ssStart = isset($this->fio['wdpc']) ? ($this->wdpcComplete - 5)*$this->wdpcIntervals : NULL;
       BlockStorageTest::printMsg(sprintf('Generating %s JSON output files in directory %s using steady state start index %d', $this->test, $dir, $ssStart), $this->verbose, __FILE__, __LINE__);
