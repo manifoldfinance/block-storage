@@ -336,7 +336,7 @@ abstract class BlockStorageTest {
     if (isset($this->options['nojson']) && $this->options['nojson']) return FALSE;
     
     // serialize options
-    $fp = fopen(sprintf('%s/%s', $dir, BlockStorageTest::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME));
+    $fp = fopen(sprintf('%s/%s', $dir, BlockStorageTest::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME), 'w');
     fwrite($fp, serialize($this->options));
     fclose($fp);
     
