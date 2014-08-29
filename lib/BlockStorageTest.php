@@ -227,7 +227,7 @@ abstract class BlockStorageTest {
         else {
           $size = NULL;
           foreach($targets as $target) {
-            $free = $this->getFreeSpace($target);
+            $free = BlockStorageTest::getFreeSpace($target);
             if ($size === NULL || $free < $size) $size = $free;
           }
           // reduce size according to active range (if < 100%) or free space buffer
@@ -340,7 +340,7 @@ abstract class BlockStorageTest {
     
     // serialize options
     $ofile = sprintf('%s/%s', $dir, BlockStorageTest::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME);
-    if (is_dir($dir) && is_writable($dir) && !file_exists($ofile)) {
+    if (is_dir($dir) && is_writable($dir)) {
       $fp = fopen($ofile, 'w');
       fwrite($fp, serialize($this->options));
       fclose($fp); 
@@ -827,7 +827,7 @@ abstract class BlockStorageTest {
     $volInfo = isset($this->options['meta_storage_vol_info']) ? $this->options['meta_storage_vol_info'] : '';
     $attrs = array('capacity' => array(), 'purge' => array(), 'vol' => array());
     foreach($this->options['target'] as $target) {
-      $capacity = $this->getFreeSpace($target);
+      $capacity = BlockStorageTest::getFreeSpace($target);
       $capacity = sprintf('%s %sB', $capacity >= 1024 ? round($capacity/1024, 2) : $capacity, $capacity >= 1024 ? 'G' : 'M');
       $attrs['capacity'][$capacity] = TRUE;
       $capacities .= sprintf('%s%s', $capacities ? ', ' : '', $capacity);
@@ -874,10 +874,13 @@ abstract class BlockStorageTest {
    * @param string $target the directory, volume or device to return free space
    * for
    * @param boolean $bytes if TRUE, return value will be in bytes
+   * @param boolean $verbose whether or not to print debug messages
    * @return int
    */
-  public function getFreeSpace($target, $bytes=FALSE) {
-    if ($this->deviceTargets) {
+  public static function getFreeSpace($target, $bytes=FALSE, $verbose=FALSE) {
+    $device = BlockStorageTest::getDevice($target);
+    
+    if ($device == $target) {
       $pieces = explode("\n", trim(shell_exec($cmd = sprintf('lsblk -n -o size -b %s', $target))));
       if (isset($pieces[0]) && is_numeric($pieces[0])) {
         $freeSpace = $pieces[0]*1;
@@ -890,10 +893,10 @@ abstract class BlockStorageTest {
       if ($bytes) $freeSpace *= 1048576;
     }
     
-    if ($freeSpace) BlockStorageTest::printMsg(sprintf('Target %s has %s MB free space [cmd=%s]', $target, $bytes ? round($freeSpace/1048576) : $freeSpace, $cmd), $this->verbose, __FILE__, __LINE__);
+    if ($freeSpace) BlockStorageTest::printMsg(sprintf('Target %s has %s MB free space [cmd=%s]', $target, $bytes ? round($freeSpace/1048576) : $freeSpace, $cmd), $verbose, __FILE__, __LINE__);
     else {
       $freeSpace = NULL;
-      BlockStorageTest::printMsg(sprintf('Unable to get free space for target %s using command: %s', $target, $cmd), $this->verbose, __FILE__, __LINE__, TRUE);
+      BlockStorageTest::printMsg(sprintf('Unable to get free space for target %s using command: %s', $target, $cmd), $verbose, __FILE__, __LINE__, TRUE);
     }
     
     return $freeSpace;
@@ -1445,12 +1448,12 @@ abstract class BlockStorageTest {
       $printed = TRUE;
       if ($prefix === NULL) {
         printf("test%s=%s\n", $suffix ? '_' . $suffix : '', $test);
-        if (isset($options['targets'])) {
+        if (isset($options['target'])) {
           $sizes = array();
-          foreach($options['targets'] as $target) $sizes[$target] = round(BlockStorageTest::getFreeSpace($target)/1024);
-          printf("targets=%s\n", implode(',', $options['targets']));
+          foreach($options['target'] as $target) $sizes[$target] = round(BlockStorageTest::getFreeSpace($target)/1024);
+          printf("targets=%s\n", implode(',', $options['target']));
           printf("targets_avg_gb=%d\n", round(array_sum($sizes)/count($sizes)));
-          printf("targets_num=%d\n", count($options['targets']));
+          printf("targets_num=%d\n", count($options['target']));
           printf("targets_sizes=%s\n", implode(',', $sizes));
         }
         if (isset($options['threads'])) {
@@ -1552,7 +1555,7 @@ abstract class BlockStorageTest {
         
         // finally try zero filling
         if (!$purged && !$nozerofill) {
-          $size = $this->getFreeSpace($target);
+          $size = BlockStorageTest::getFreeSpace($target);
           
           // adjust for active range and volume target free space buffer
           if ($this->options['active_range'] < 100) $size *= ($this->options['active_range'] * 0.01);
