@@ -18,14 +18,14 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ] ; then
 Usage: save.sh [args] [/path/to/results]
 
 Saves block storage test results to CSV files, Google BigQuery, MySQL or 
-PostgreSQL. Test artifacts (report PDF and zip files) may also be saved to an 
-S3, Google Cloud Storage or Azure API compatible object storage platform.
+PostgreSQL. Test artifacts (report PDF and zip files) may also be saved to S3 
+Google Cloud Storage or Azure (API) compatible object storage
 
 If the [/path/to/results] argument is not specified, 'pwd' will be assumed. 
 This argument may be either the directory where test results have been written
 to, or a directory containing numbered sub-directories [1..N] each containing 
-results from multiple test iterations. If the latter, the test iteration number
-will be included in the saved results.
+results from a test iteration. The test iteration number is included in saved 
+results (1 for non-numbered directories).
 
 By default results are written to CSV files in 'pwd'. These arguments below may
 be set to modify default CSV saving. These arguments may also be set in a 
