@@ -43,7 +43,7 @@ if ($db =& BenchmarkDb::getDb()) {
       $file = sprintf('%s/%s', $dir, $file);
       if (!isset($args[$arg]) && file_exists($file)) {
         $pieces = explode('.', $file);
-        $col = sprintf('results_%s', $pieces[count($pieces) - 1]);
+        $col = sprintf('report_%s', $pieces[count($pieces) - 1]);
         $saved = $db->saveArtifact($file, $col);
         if ($saved) print_msg(sprintf('Saved %s successfully', basename($file)), isset($args['verbose']), __FILE__, __LINE__);
         else if ($saved === NULL) print_msg(sprintf('Unable to save %s', basename($file)), isset($args['verbose']), __FILE__, __LINE__, TRUE);
@@ -83,17 +83,17 @@ if ($db =& BenchmarkDb::getDb()) {
       }
       else print_msg(sprintf('Skipping test %s because results are not present', $test), isset($args['verbose']), __FILE__, __LINE__);
     }
-    
-    // finalize saving of results
-    if ($db->save()) {
-      print_msg(sprintf('Successfully saved test results from directory %s', $dir), isset($args['verbose']), __FILE__, __LINE__);
-      $status = 0;
-    }
-    else {
-      print_msg(sprintf('Unable to save test results from directory %s', $dir), isset($args['verbose']), __FILE__, __LINE__, TRUE);
-      $status = 1;
-      break;
-    }
+  }
+  
+  // finalize saving of results
+  if ($db->save()) {
+    print_msg(sprintf('Successfully saved test results from directory %s', $dir), isset($args['verbose']), __FILE__, __LINE__);
+    $status = 0;
+  }
+  else {
+    print_msg(sprintf('Unable to save test results from directory %s', $dir), isset($args['verbose']), __FILE__, __LINE__, TRUE);
+    $status = 1;
+    break;
   }
 }
 
