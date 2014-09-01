@@ -397,6 +397,22 @@ identifiers - e.g. report-iops.json):
                       format
   report.pdf         PDF version of the test report (wkhtmltopdf used to 
                      generate this version of the report)
+                     
+                     
+USAGE
+# perform IOPS test against device /dev/sdc
+./run.sh --target=/dev/sdc --test=iops
+
+# perform IOPS, Latency and Throughput tests against /dev/sdc and /dev/sdd 
+# concurrently using a maximum of [num CPU cores]*2 and 32 OIO per thread
+./run.sh --target=/dev/sdc --target=/dev/sdd --test=iops --test=latency --test=throughput --threads="{cpu}*2" --oio_per_thread=32
+
+# perform IOPS test against device /dev/sdc but skip the purge step
+./run.sh --target=/dev/sdc --test=iops --nopurge
+
+# perform IOPS test against device /dev/sdc but skip the purge and workload 
+# independent preconditioning
+./run.sh --target=/dev/sdc --test=iops --nopurge --noprecondition
 
 
 EXIT CODES:
