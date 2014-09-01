@@ -99,10 +99,10 @@ class BenchmarkArchiverAzure extends BenchmarkArchiver {
     $headers['Content-Type'] = get_mime_type($file);
     $headers = $this->getHeaders('PUT', $headers, $object);
     $curl = ch_curl($url, 'PUT', $headers, $file, NULL, 201);
-    if ($curl === 201) print_msg(sprintf('Upload of file %s to Azure successful. URL is %s', $file, $url), __FILE__, __LINE__);
+    if ($curl === 201) print_msg(sprintf('Upload of file %s to Azure successful. URL is %s', $file, $url), isset($this->options['verbose']), __FILE__, __LINE__);
     else {
       $url = NULL;
-      print_msg(sprintf('Upload of file %s to Azure failed', $file), __FILE__, __LINE__, TRUE);
+      print_msg(sprintf('Upload of file %s to Azure failed', $file), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
     }
     return $url;
   }
@@ -145,7 +145,7 @@ class BenchmarkArchiverAzure extends BenchmarkArchiver {
         $started = TRUE;
       }
     }
-    print_msg(sprintf('Signing string %s', str_replace("\n", '\n', $string)), __FILE__, __LINE__);
+    print_msg(sprintf('Signing string %s', str_replace("\n", '\n', $string)), isset($this->options['verbose']), __FILE__, __LINE__);
 		$signature = base64_encode(hash_hmac('sha256', $string, base64_decode($this->options['store_secret']), TRUE));
 		return sprintf('SharedKeyLite %s:%s', $this->options['store_key'], $signature);
   }
@@ -162,12 +162,12 @@ class BenchmarkArchiverAzure extends BenchmarkArchiver {
       $curl = ch_curl($this->getUrl(NULL, array('restype' => 'container')), 'HEAD', $this->getHeaders(), NULL, NULL, '200,404');
       if ($curl === 200) {
         $valid = TRUE;
-        print_msg(sprintf('Azure authentication and bucket validation successful'), __FILE__, __LINE__);
+        print_msg(sprintf('Azure authentication and bucket validation successful'), isset($this->options['verbose']), __FILE__, __LINE__);
       }
-      else if ($curl === 404) print_msg(sprintf('Azure authentication successful but bucket %s does not exist', $this->options['store_container']), __FILE__, __LINE__, TRUE);
-      else print_msg(sprintf('Azure authentication failed'), __FILE__, __LINE__, TRUE);
+      else if ($curl === 404) print_msg(sprintf('Azure authentication successful but bucket %s does not exist', $this->options['store_container']), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
+      else print_msg(sprintf('Azure authentication failed'), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
     }
-    else print_msg(sprintf('--store_key, --store_secret and --store_container are required'), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
+    else print_msg(sprintf('--store_key, --store_secret and --store_container are required'), isset($this->options['verbose']), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
 
     return $valid;
   }

@@ -241,6 +241,9 @@ USAGE
 # save results to CSV files
 ./save.sh
 
+# save results in ~/block-storage-testing
+./save.sh ~/block-storage-testing
+
 # save results to a PostgreSQL database
 ./save --db postgresql --db_user dbuser --db_pswd dbpass --db_host db.mydomain.com --db_name benchmarks
 

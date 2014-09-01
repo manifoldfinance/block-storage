@@ -93,10 +93,10 @@ class BenchmarkArchiverGoogle extends BenchmarkArchiver {
     if (isset($this->options['store_public'])) $headers['x-goog-acl'] = 'public-read';
     $headers = $this->getHeaders('PUT', $headers, $object);
     $curl = ch_curl($url, 'PUT', $headers, $file, NULL, 200);
-    if ($curl === 200) print_msg(sprintf('Upload of file %s to GCS successful. URL is %s (%s)', $file, $url, isset($this->options['store_public']) ? 'URL is publicly accessible' : 'URL is private'), __FILE__, __LINE__);
+    if ($curl === 200) print_msg(sprintf('Upload of file %s to GCS successful. URL is %s (%s)', $file, $url, isset($this->options['store_public']) ? 'URL is publicly accessible' : 'URL is private'), isset($this->options['verbose']), __FILE__, __LINE__);
     else {
       $url = NULL;
-      print_msg(sprintf('Upload of file %s to GCS failed', $file), __FILE__, __LINE__, TRUE);
+      print_msg(sprintf('Upload of file %s to GCS failed', $file), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
     }
     return $url;
   }
@@ -127,7 +127,7 @@ class BenchmarkArchiverGoogle extends BenchmarkArchiver {
                       $headers['date'], 
                       $goog_string,
                       $uri);
-    print_msg(sprintf('Signing string %s', str_replace("\n", '\n', $string)), __FILE__, __LINE__);
+    print_msg(sprintf('Signing string %s', str_replace("\n", '\n', $string)), isset($this->options['verbose']), __FILE__, __LINE__);
 		$signature = base64_encode(extension_loaded('hash') ? hash_hmac('sha1', $string, $this->options['store_secret'], TRUE) : pack('H*', sha1((str_pad($this->options['store_secret'], 64, chr(0x00)) ^ (str_repeat(chr(0x5c), 64))) . pack('H*', sha1((str_pad($this->options['store_secret'], 64, chr(0x00)) ^ (str_repeat(chr(0x36), 64))) . $string)))));
 		return sprintf('GOOG1 %s:%s', $this->options['store_key'], $signature);
   }
@@ -146,8 +146,8 @@ class BenchmarkArchiverGoogle extends BenchmarkArchiver {
         $valid = TRUE;
         print_msg(sprintf('GCS authentication and bucket validation successful'), __FILE__, __LINE__);
       }
-      else if ($curl === 404) print_msg(sprintf('GCS authentication successful but bucket %s does not exist', $this->options['store_container']), __FILE__, __LINE__, TRUE);
-      else print_msg(sprintf('GCS authentication failed'), __FILE__, __LINE__, TRUE);
+      else if ($curl === 404) print_msg(sprintf('GCS authentication successful but bucket %s does not exist', $this->options['store_container']), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
+      else print_msg(sprintf('GCS authentication failed'), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
     }
     else print_msg(sprintf('--store_key, --store_secret and --store_container are required'), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
 

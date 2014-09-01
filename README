@@ -724,6 +724,9 @@ USAGE
 # independent preconditioning
 ./run.sh --target=/dev/sdc --test=iops --nopurge --noprecondition
 
+# perform 5 iterations of the same IOPS test above
+for i in {1..5}; do mkdir -p ~/block-storage-testing/$i; ./run.sh --target=/dev/sdc --test=iops --nopurge --noprecondition --output ~/block-storage-testing/$i; done
+
 
 # save.sh saves results to CSV, MySQL, PostgreSQL, BigQuery or via HTTP 
 # callback. It can also save artifacts (PDF and ZIP reports) to S3, Azure
@@ -731,6 +734,9 @@ USAGE
 
 # save results to CSV files
 ./save.sh
+
+# save results from 5 iterations text example above
+./save.sh ~/block-storage-testing
 
 # save results to a PostgreSQL database
 ./save --db postgresql --db_user dbuser --db_pswd dbpass --db_host db.mydomain.com --db_name benchmarks

@@ -414,6 +414,9 @@ USAGE
 # independent preconditioning
 ./run.sh --target=/dev/sdc --test=iops --nopurge --noprecondition
 
+# perform 5 iterations of the same IOPS test above
+for i in {1..5}; do mkdir -p ~/block-storage-testing/$i; ./run.sh --target=/dev/sdc --test=iops --nopurge --noprecondition --output ~/block-storage-testing/$i; done
+
 
 EXIT CODES:
   0 block storage testing successful
