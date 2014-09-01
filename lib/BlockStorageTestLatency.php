@@ -251,7 +251,6 @@ class BlockStorageTestLatency extends BlockStorageTest {
   protected function jobMetrics() {
     $metrics = array();
     $jobs = $this->getSteadyStateJobs();
-    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 4;
     foreach(array_keys($jobs) as $job) {
       if (preg_match('/^x[0-9]+\-([0-9]+)_([0-9]+)\-([0-9]+[mkb])\-/', $job, $m) && isset($jobs[$job]['write'])) {
         $key = sprintf('%s_%s_%s_', $m[3], $m[1], $m[2]);
@@ -262,9 +261,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
       }
     }
     foreach($metrics as $key => $vals) {
-      if ($key != 'steady_state_start') {
-        $metrics[$key] = round(array_sum($vals)/count($vals), self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION);
-      }
+      $metrics[$key] = round(array_sum($vals)/count($vals), self::BLOCK_STORAGE_TEST_LATENCY_ROUND_PRECISION);
     }
     return $metrics;
   }
@@ -280,8 +277,8 @@ class BlockStorageTestLatency extends BlockStorageTest {
    */
   public function wdpc() {
     $status = NULL;
-    BlockStorageTest::printMsg(sprintf('Initiating workload dependent preconditioning and steady state for LATENCY test'), $this->verbose, __FILE__, __LINE__);
-    $max = $this->options['ss_rounds'];
+    print_msg(sprintf('Initiating workload dependent preconditioning and steady state for LATENCY test'), $this->verbose, __FILE__, __LINE__);
+    $max = $this->options['ss_max_rounds'];
     $ssMetrics = array();
     $blockSizes = $this->filterBlocksizes(array('8k', '4k', '512b'));
     $lastBlockSize = $blockSizes[count($blockSizes) - 1];
@@ -295,7 +292,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
         $rwmixread = 100 - $write;
         foreach($blockSizes as $bs) {
           $name = sprintf('x%d-%s-%s-rand', $x, str_replace('/', '_', $rw), $bs);
-          BlockStorageTest::printMsg(sprintf('Executing random IO test iteration for round %d of %d, rw ratio %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
+          print_msg(sprintf('Executing random IO test iteration for round %d of %d, rw ratio %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
           $params = array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'time_based' => FALSE, 'numjobs' => count($this->options['target']), 'iodepth' => 1);
           if ($read == 100) $params['rw'] = 'randread';
           else if ($write == 100) $params['rw'] = 'randwrite';
@@ -304,28 +301,28 @@ class BlockStorageTestLatency extends BlockStorageTest {
             $params['rwmixread'] = $rwmixread;
           }
           if ($fio = $this->fio($params, 'wdpc')) {
-            BlockStorageTest::printMsg(sprintf('Random IO test iteration for round %d of %d, rw ratio %s and block size %s was successful', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
+            print_msg(sprintf('Random IO test iteration for round %d of %d, rw ratio %s and block size %s was successful', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
             $results = $this->fio['wdpc'][count($this->fio['wdpc']) - 1];
           }
           else {
-            BlockStorageTest::printMsg(sprintf('Random IO test iteration for round %d of %d, rw ratio %s and block size %s failed', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__, TRUE);
+            print_msg(sprintf('Random IO test iteration for round %d of %d, rw ratio %s and block size %s failed', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__, TRUE);
             break;
           }
           if ($rw == '0/100' && $bs == '4k') {
             $latency = $this->getLatency($results['jobs'][0]);
-            BlockStorageTest::printMsg(sprintf('Added Latency metric %s ms for steady state verification', $latency), $this->verbose, __FILE__, __LINE__);
+            print_msg(sprintf('Added Latency metric %s ms for steady state verification', $latency), $this->verbose, __FILE__, __LINE__);
             $ssMetrics[$x] = $latency;
           }
           // check for steady state
           if ($x >= 5 && $rw == '0/100' && $bs == $lastBlockSize) {
             $metrics = array();
             for($i=4; $i>=0; $i--) $metrics[$x-$i] = $ssMetrics[$x-$i];
-            BlockStorageTest::printMsg(sprintf('Test round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using 4k write latency metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
+            print_msg(sprintf('Test round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using 4k write latency metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
             if ($this->isSteadyState($metrics, $x)) {
-              BlockStorageTest::printMsg(sprintf('Steady state achieved - testing will stop'), $this->verbose, __FILE__, __LINE__);
+              print_msg(sprintf('Steady state achieved - testing will stop'), $this->verbose, __FILE__, __LINE__);
               $status = TRUE;
             }
-            else BlockStorageTest::printMsg(sprintf('Steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
+            else print_msg(sprintf('Steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
             
             // end of the line => last test round and steady state not achieved
             if ($x == $max && $status === NULL) $status = FALSE;

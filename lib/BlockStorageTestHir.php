@@ -206,7 +206,6 @@ class BlockStorageTestHir extends BlockStorageTest {
    */
   protected function jobMetrics() {
     $metrics = array();
-    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 4;
     if ($jobs = $this->getSteadyStateJobs()) {
       $iops = array();
       foreach(array_keys($jobs) as $job) {
@@ -244,23 +243,23 @@ class BlockStorageTestHir extends BlockStorageTest {
    */
   public function wdpc() {
     $status = NULL;
-    BlockStorageTest::printMsg(sprintf('Initiating workload dependent preconditioning and steady state for WSAT test'), $this->verbose, __FILE__, __LINE__);
-    $max = $this->options['ss_rounds'];
+    print_msg(sprintf('Initiating workload dependent preconditioning and steady state for WSAT test'), $this->verbose, __FILE__, __LINE__);
+    $max = $this->options['ss_max_rounds'];
     $ssMetrics = array();
     $tgbw = 0;
     
     for($x=1; $x<=$max; $x++) {
       for($n=1; $n<=BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_PRECONDITION_INTERVALS; $n++) {
         $name = sprintf('x%d-0_100-4k-rand-n%d', $x, $n);
-        BlockStorageTest::printMsg(sprintf('Starting %d sec HIR 4k rand write preconditioning round %d of %d, test %d of %d [name=%s]', $this->options['wd_test_duration'], $x, $max, $n, BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_PRECONDITION_INTERVALS, $name), $this->verbose, __FILE__, __LINE__);
+        print_msg(sprintf('Starting %d sec HIR 4k rand write preconditioning round %d of %d, test %d of %d [name=%s]', $this->options['wd_test_duration'], $x, $max, $n, BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_PRECONDITION_INTERVALS, $name), $this->verbose, __FILE__, __LINE__);
         $params = array('blocksize' => '4k', 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'rw' => 'randwrite', 'time_based' => FALSE);
 
         if ($fio = $this->fio($params, 'wdpc')) {
-          BlockStorageTest::printMsg(sprintf('Test %s was successful', $name), $this->verbose, __FILE__, __LINE__);
+          print_msg(sprintf('Test %s was successful', $name), $this->verbose, __FILE__, __LINE__);
           $results = $this->fio['wdpc'][count($this->fio['wdpc']) - 1];
         }
         else {
-          BlockStorageTest::printMsg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
+          print_msg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
           break;
         } 
       }
@@ -268,19 +267,19 @@ class BlockStorageTestHir extends BlockStorageTest {
       // add steady state metric
       if ($results) {
         $iops = $results['jobs'][0]['write']['iops'];
-        BlockStorageTest::printMsg(sprintf('Added IOPS metric %d from preconditioning round %d of %d for HIR steady state verification', $iops, $x, $max), $this->verbose, __FILE__, __LINE__);
+        print_msg(sprintf('Added IOPS metric %d from preconditioning round %d of %d for HIR steady state verification', $iops, $x, $max), $this->verbose, __FILE__, __LINE__);
         $ssMetrics[$x] = $iops;
 
         // check for steady state at rounds 5+
         if ($x >= 5) {
           $metrics = array();
           for($i=4; $i>=0; $i--) $metrics[$x-$i] = $ssMetrics[$x-$i];
-          BlockStorageTest::printMsg(sprintf('HIR preconditioning test %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using 4k write IOPS metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
+          print_msg(sprintf('HIR preconditioning test %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using 4k write IOPS metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
           if ($this->isSteadyState($metrics, $x)) {
-            BlockStorageTest::printMsg(sprintf('HIR steady state achieved - testing will stop'), $this->verbose, __FILE__, __LINE__);
+            print_msg(sprintf('HIR steady state achieved - testing will stop'), $this->verbose, __FILE__, __LINE__);
             $status = TRUE;
           }
-          else BlockStorageTest::printMsg(sprintf('HIR steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
+          else print_msg(sprintf('HIR steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
 
           // end of the line => last test round and steady state not achieved
           if ($x == $max && $status === NULL) $status = FALSE;
@@ -293,18 +292,18 @@ class BlockStorageTestHir extends BlockStorageTest {
     
     // wait state segments
     if ($status !== NULL) {
-      BlockStorageTest::printMsg(sprintf('HIR preconditioning complete - beginning wait state test segments'), $this->verbose, __FILE__, __LINE__);
+      print_msg(sprintf('HIR preconditioning complete - beginning wait state test segments'), $this->verbose, __FILE__, __LINE__);
       foreach(array(5, 10, 15, 25, 50) as $wait) {
         for($x=1; $x<=BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_SIZE; $x++) {
           $name = sprintf('w%d-0_100-4k-rand-%d', $x, $wait);
-          BlockStorageTest::printMsg(sprintf('Starting %d sec HIR 4k rand write wait segment %d of %d [name=%s; wait=%dsec]', BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION, $x, BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_SIZE, $name, $wait), $this->verbose, __FILE__, __LINE__);
+          print_msg(sprintf('Starting %d sec HIR 4k rand write wait segment %d of %d [name=%s; wait=%dsec]', BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION, $x, BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_SIZE, $name, $wait), $this->verbose, __FILE__, __LINE__);
           $params = array('blocksize' => '4k', 'name' => $name, 'runtime' => BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION, 'rw' => 'randwrite', 'time_based' => FALSE);
           if ($fio = $this->fio($params, 'wdpc')) {
-            BlockStorageTest::printMsg(sprintf('Test %s was successful - sleeping for %d seconds', $name, $wait), $this->verbose, __FILE__, __LINE__);
+            print_msg(sprintf('Test %s was successful - sleeping for %d seconds', $name, $wait), $this->verbose, __FILE__, __LINE__);
             sleep($wait);
           }
           else {
-            BlockStorageTest::printMsg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
+            print_msg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
             break;
           }
         }
@@ -315,11 +314,11 @@ class BlockStorageTestHir extends BlockStorageTest {
           $name = sprintf('x%d-baseline-0_100-4k-rand-%d', $x, $wait);
           $params = array('blocksize' => '4k', 'name' => $name, 'runtime' => BlockStorageTestHir::BLOCK_STORAGE_TEST_HIR_WAIT_LOOP_DURATION, 'rw' => 'randwrite', 'time_based' => FALSE);
           if ($fio = $this->fio($params, 'wdpc')) {
-            BlockStorageTest::printMsg(sprintf('Test %s was successful - sleeping for %d seconds', $name, $wait), $this->verbose, __FILE__, __LINE__);
+            print_msg(sprintf('Test %s was successful - sleeping for %d seconds', $name, $wait), $this->verbose, __FILE__, __LINE__);
             sleep($wait);
           }
           else {
-            BlockStorageTest::printMsg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
+            print_msg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
             break;
           }
         }

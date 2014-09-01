@@ -302,7 +302,6 @@ class BlockStorageTestThroughput extends BlockStorageTest {
   protected function jobMetrics() {
     $metrics = array();
     if ($this->bs !== NULL) {
-      if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 4;
       $bs = $this->bs;
       $jobs = $this->getSteadyStateJobs();
       foreach(array_keys($jobs) as $job) {
@@ -313,9 +312,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
         }
       }
       foreach($metrics as $key => $vals) {
-        if ($key != 'steady_state_start') {
-          $metrics[$key] = round(array_sum($vals)/count($vals), 2);
-        }
+        $metrics[$key] = round(array_sum($vals)/count($vals), 2);
       }
     }
     return $metrics;
@@ -337,40 +334,40 @@ class BlockStorageTestThroughput extends BlockStorageTest {
       $bs = $this->bs;
       $status = NULL;
       if ($this->purgeAndPrecondition) {
-        BlockStorageTest::printMsg(sprintf('Repeating purge and workload independent preconditioning'), $this->verbose, __FILE__, __LINE__);
+        print_msg(sprintf('Repeating purge and workload independent preconditioning'), $this->verbose, __FILE__, __LINE__);
         $this->purge();
         $this->wipc($bs);
       }
-      BlockStorageTest::printMsg(sprintf('Initiating %s workload dependent preconditioning and steady state for THROUGHPUT test', $this->bs), $this->verbose, __FILE__, __LINE__);
-      $max = $this->options['ss_rounds'];
+      print_msg(sprintf('Initiating %s workload dependent preconditioning and steady state for THROUGHPUT test', $this->bs), $this->verbose, __FILE__, __LINE__);
+      $max = $this->options['ss_max_rounds'];
       $workloads = $this->filterWorkloads(array('100/0', '0/100'));
       $ssMetrics = array();
       for($x=1; $x<=$max; $x++) {
         foreach($workloads as $rw) {
           $name = sprintf('x%d-%s-%s-seq', $x, str_replace('/', '_', $rw), $bs);
-          BlockStorageTest::printMsg(sprintf('Executing sequential THROUGHPUT test iteration for round %d of %d, workload %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
+          print_msg(sprintf('Executing sequential THROUGHPUT test iteration for round %d of %d, workload %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
           if ($fio = $this->fio(array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'rw' => $rw == '100/0' ? 'read' : 'write', 'time_based' => FALSE), 'wdpc')) {
-            BlockStorageTest::printMsg(sprintf('Sequential THROUGHPUT test iteration for round %d of %d, workload %s and block size %s was successful', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
+            print_msg(sprintf('Sequential THROUGHPUT test iteration for round %d of %d, workload %s and block size %s was successful', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
             $results = $this->fio['wdpc'][count($this->fio['wdpc']) - 1];
           }
           else {
-            BlockStorageTest::printMsg(sprintf('Random IO test iteration for round %d of %d, rw ratio %s and block size %s failed', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__, TRUE);
+            print_msg(sprintf('Random IO test iteration for round %d of %d, rw ratio %s and block size %s failed', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__, TRUE);
             break;
           }
           if ($rw == '0/100') {
             $bw = round($results['jobs'][0]['write']['bw']/1024, 2);
-            BlockStorageTest::printMsg(sprintf('Added BW metric %s MB/s for steady state verification', $bw), $this->verbose, __FILE__, __LINE__);
+            print_msg(sprintf('Added BW metric %s MB/s for steady state verification', $bw), $this->verbose, __FILE__, __LINE__);
             $ssMetrics[$x] = $bw;
             // check for steady state
             if ($x >= 5) {
               $metrics = array();
               for($i=4; $i>=0; $i--) $metrics[$x-$i] = $ssMetrics[$x-$i];
-              BlockStorageTest::printMsg(sprintf('Test iteration for round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using %s THROUGHPUT metrics [%s],[%s]', $x, $max, count($metrics), implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
+              print_msg(sprintf('Test iteration for round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using %s THROUGHPUT metrics [%s],[%s]', $x, $max, count($metrics), implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
               if ($this->isSteadyState($metrics, $x)) {
-                BlockStorageTest::printMsg(sprintf('Steady state achieved - %s testing will stop', $bs), $this->verbose, __FILE__, __LINE__);
+                print_msg(sprintf('Steady state achieved - %s testing will stop', $bs), $this->verbose, __FILE__, __LINE__);
                 $status = TRUE;
               }
-              else BlockStorageTest::printMsg(sprintf('Steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
+              else print_msg(sprintf('Steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
 
               // end of the line => last test round and steady state not achieved
               if ($x == $max && $status === NULL) $status = FALSE;
@@ -388,7 +385,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
     // main test controller
     else {
       foreach(array_keys($this->subtests) as $i => $bs) {
-        BlockStorageTest::printMsg(sprintf('Starting workload dependent preconditioning for throughput block size %s (%d of %d)', $bs, $i+1, count($this->subtests)), $this->verbose, __FILE__, __LINE__);
+        print_msg(sprintf('Starting workload dependent preconditioning for throughput block size %s (%d of %d)', $bs, $i+1, count($this->subtests)), $this->verbose, __FILE__, __LINE__);
         $status = $this->subtests[$bs]->wdpc();
         foreach(array_keys($this->subtests[$bs]->fio) as $step) {
           if (!isset($this->fio[$step])) $this->fio[$step] = array();

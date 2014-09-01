@@ -78,6 +78,11 @@ ARGUMENTS:
 --meta_compute_service      The name of the compute service this test pertains
                             to. Used for report headers. May also be specified 
                             using the environment variable bm_compute_service
+                            
+--meta_compute_service_id   The id of the compute service this test pertains
+                            to. Added to saved results. May also be specified 
+                            using the environment variable 
+                            bm_compute_service_id
 
 --meta_cpu                  CPU descriptor to use for report headers. If not 
                             specified, it will be set using the 'model name' 
@@ -105,17 +110,30 @@ ARGUMENTS:
 --meta_notes_test           Optional notes to display in the Test Platform 
                             header column
                             
---meta_os_info              Operating system descriptor to use for report 
+--meta_os                   Operating system descriptor to use for report 
                             headers. If not specified, this meta data will be 
                             derived from the first line of /etc/issue
                             
 --meta_provider             The name of the cloud provider this test pertains
                             to. Used for report headers. May also be specified 
                             using the environment variable bm_provider
+                            
+--meta_provider_id          The id of the cloud provider this test pertains
+                            to. Added to saved results. May also be specified 
+                            using the environment variable 
+                            bm_provider_id
 
 --meta_region               The compute service region this test pertains to. 
                             Used for report headers. May also be specified 
                             using the environment variable bm_region
+                            
+--meta_resource_id          An optional benchmark resource identifiers. Added 
+                            to saved results. May also be specified using the 
+                            environment variable bm_resource_id
+
+--meta_run_id               An optional benchmark run identifiers. Added to 
+                            saved results. May also be specified using the 
+                            environment variable bm_run_id
                             
 --meta_storage_config       Storage configuration descriptor to use for report 
                             headers. If not specified, 'Unknown' will be 
@@ -145,8 +163,6 @@ ARGUMENTS:
                             for additional licensing information
                             
 --nojson                    Don't generate JSON result or fio output files
-
---noparsefio                Don't include fio results in parse.sh output
 
 --nopdfreport               Don't generate PDF version of test report - 
                             report.pdf. (wkhtmltopdf dependency removed if 
@@ -200,6 +216,9 @@ ARGUMENTS:
                             specification, this is a user definable parameter. 
                             For latency tests, this parameter is a fixed value
                             of 1. Default value for this parameter is 64
+                            
+--savefio                   Include results from every fio test job in save 
+                            output
 
 --secureerase_pswd          In order for ATA secure erase to be attempted for 
                             device purge (prior to test invocation), you must
@@ -218,7 +237,7 @@ ARGUMENTS:
                             be repeated. Valid options are:
                             100/0, 95/5, 65/35, 50/50, 35/65, 5/95
 
---ss_rounds                 The maximum number of test cycle iterations to 
+--ss_max_rounds             The maximum number of test cycle iterations to 
                             allow for steady state verification. Default is 
                             x=25 (per the SNIA test specification). If steady 
                             state cannot be reached within this number of test 

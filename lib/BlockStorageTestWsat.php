@@ -162,7 +162,6 @@ class BlockStorageTestWsat extends BlockStorageTest {
    */
   protected function jobMetrics() {
     $metrics = array();
-    if ($this->wdpcComplete) $metrics['steady_state_start'] = $this->wdpcComplete - 4;
     if ($jobs = $this->getSteadyStateJobs()) {
       $iops = array();
       foreach(array_keys($jobs) as $job) {
@@ -184,8 +183,8 @@ class BlockStorageTestWsat extends BlockStorageTest {
    */
   public function wdpc() {
     $status = NULL;
-    BlockStorageTest::printMsg(sprintf('Initiating workload dependent preconditioning and steady state for WSAT test'), $this->verbose, __FILE__, __LINE__);
-    $max = $this->options['ss_rounds'];
+    print_msg(sprintf('Initiating workload dependent preconditioning and steady state for WSAT test'), $this->verbose, __FILE__, __LINE__);
+    $max = $this->options['ss_max_rounds'];
     $ssMetrics = array();
     $tgbw = 0;
     
@@ -195,35 +194,35 @@ class BlockStorageTestWsat extends BlockStorageTest {
       for($n=1; $n<=BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES; $n++) {
         $testNum = (($x-1)*BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES)+$n;
         $name = sprintf('x%d-0_100-4k-rand-%d', $x, $testNum);
-        BlockStorageTest::printMsg(sprintf('Starting %dsec 4k rand write test %d of %d [%d] for WSAT test iteration %d of %d [name=%s]. TGBW=%s GB', $this->options['wd_test_duration'], $n, BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES, $testNum, $x, $max, $name, round($tgbw, BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_ROUND_PRECISION)), $this->verbose, __FILE__, __LINE__);
+        print_msg(sprintf('Starting %dsec 4k rand write test %d of %d [%d] for WSAT test iteration %d of %d [name=%s]. TGBW=%s GB', $this->options['wd_test_duration'], $n, BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES, $testNum, $x, $max, $name, round($tgbw, BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_ROUND_PRECISION)), $this->verbose, __FILE__, __LINE__);
         $params = array('blocksize' => '4k', 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'rw' => 'randwrite', 'time_based' => FALSE);
         
         if ($fio = $this->fio($params, 'wdpc')) {
-          BlockStorageTest::printMsg(sprintf('Test %s was successful', $name), $this->verbose, __FILE__, __LINE__);
+          print_msg(sprintf('Test %s was successful', $name), $this->verbose, __FILE__, __LINE__);
           $results = $this->fio['wdpc'][count($this->fio['wdpc']) - 1];
           $tgbw += ($results['jobs'][0]['write']['io_bytes']/1024)/1024;
         }
         else {
-          BlockStorageTest::printMsg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
+          print_msg(sprintf('Test %s failed', $name), $this->verbose, __FILE__, __LINE__, TRUE);
           break;
         }
         
         // add steady state metric
         if ($n == BlockStorageTestWsat::BLOCK_STORAGE_TEST_WSAT_CYCLES) {
           $iops = $results['jobs'][0]['write']['iops'];
-          BlockStorageTest::printMsg(sprintf('Added IOPS metric %d for WSAT steady state verification', $iops), $this->verbose, __FILE__, __LINE__);
+          print_msg(sprintf('Added IOPS metric %d for WSAT steady state verification', $iops), $this->verbose, __FILE__, __LINE__);
           $ssMetrics[$x] = $iops;
           
           // check for steady state at rounds 5+
           if ($x >= 5) {
             $metrics = array();
             for($i=4; $i>=0; $i--) $metrics[$x-$i] = $ssMetrics[$x-$i];
-            BlockStorageTest::printMsg(sprintf('WSAT test round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using 4k write IOPS metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
+            print_msg(sprintf('WSAT test round %d of %d complete and >= 5 rounds finished - checking if steady state has been achieved using 4k write IOPS metrics [%s],[%s]', $x, $max, implode(',', array_keys($metrics)), implode(',', $metrics)), $this->verbose, __FILE__, __LINE__);
             if ($this->isSteadyState($metrics, $x)) {
-              BlockStorageTest::printMsg(sprintf('WSAT steady state achieved - testing will stop'), $this->verbose, __FILE__, __LINE__);
+              print_msg(sprintf('WSAT steady state achieved - testing will stop'), $this->verbose, __FILE__, __LINE__);
               $status = TRUE;
             }
-            else BlockStorageTest::printMsg(sprintf('WSAT steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
+            else print_msg(sprintf('WSAT steady state NOT achieved'), $this->verbose, __FILE__, __LINE__);
             
             // end of the line => last test round and steady state not achieved
             if ($x == $max && $status === NULL) $status = FALSE;   
