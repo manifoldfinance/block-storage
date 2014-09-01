@@ -145,11 +145,8 @@ line delimited config file located in ~/.ch_benchmark (e.g. db_host=localhost)
                             REQUIRED when --store is set
                             
 --store_endpoint            Overrides default API endpoints for storage 
-                            platforms. For OpenStack, this is the omplete URL 
-                            for the identity service (defaults to Rackspace US: 
-                            https://identity.api.rackspacecloud.com/v2.0/). If 
-                            specified, the endpoint should be compatible with 
-                            the designated --store API
+                            platforms. If specified, the endpoint should be 
+                            compatible with the designated --store API
 
 --store_insecure            Use an insecure endpoint (http) instead of secure 
                             (https)
