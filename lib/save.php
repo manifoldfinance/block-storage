@@ -56,6 +56,7 @@ if ($db =& BenchmarkDb::getDb()) {
         // save job specific results
         $results['iteration'] = $iteration;
         $results = array_merge(BlockStorageTest::getMetaCols($dir), $results);
+        $results['test'] = $test;
         if ($db->addRow($test, $results)) print_msg(sprintf('Successfully saved %s test results', $test), isset($args['verbose']), __FILE__, __LINE__);
         else print_msg(sprintf('Failed to save %s test results', $test), isset($args['verbose']), __FILE__, __LINE__, TRUE);
         
@@ -93,7 +94,6 @@ if ($db =& BenchmarkDb::getDb()) {
   else {
     print_msg(sprintf('Unable to save test results from directory %s', $dir), isset($args['verbose']), __FILE__, __LINE__, TRUE);
     $status = 1;
-    break;
   }
 }
 

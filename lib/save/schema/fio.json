@@ -1,5 +1,5 @@
 [
-  {"name": "fio_command", "type": "char(255)"},
+  {"name": "fio_command", "type": "text"},
   {"name": "iodepth_level_1", "type": "float unsigned"},
   {"name": "iodepth_level_2", "type": "float unsigned"},
   {"name": "iodepth_level_4", "type": "float unsigned"},
