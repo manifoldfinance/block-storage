@@ -8,6 +8,11 @@ characteristics. The specification is available here:
 
 http://snia.org/sites/default/files/SSS_PTS_Enterprise_v1.1.pdf
 
+This benchmark suite uses gnuplot and wkhtmltopdf to generate test reports 
+based on the SNIA specification. An example report is available here:
+
+https://github.com/cloudharmony/block-storage/blob/master/reports/sample-report.pdf
+
 A few notes on cloud/virtualization limitations as they pertain to SNIA test 
 specifications:
 
