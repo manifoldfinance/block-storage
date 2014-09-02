@@ -79,12 +79,13 @@ class BenchmarkDbMySql extends BenchmarkDb {
    * @return array
    */
   private function mysql($query='show tables') {
-    $cmd = sprintf('mysql -s%s%s%s%s%s -e %s;echo $?', 
+    $cmd = sprintf('mysql -s%s%s%s%s%s%s -e %s;echo $?', 
                    isset($this->options['db_host']) ? ' -h ' . $this->options['db_host'] : '', 
                    isset($this->options['db_name']) ? ' -D ' . $this->options['db_name'] : '',
                    isset($this->options['db_port']) ? ' -P ' . $this->options['db_port'] : '',
                    isset($this->options['db_pswd']) ? ' -p"' . $this->options['db_pswd'] . '"' : '',
                    isset($this->options['db_user']) ? ' -u ' . $this->options['db_user'] : '',
+                   preg_match('/infile/i', $query) ? ' --local-infile' : '',
                    '"' . str_replace('"', '\"', $query) . '" 2>/dev/null');
     print_msg(sprintf('Attempting to query MySQL using: %s', isset($this->options['db_pswd']) ? str_replace($this->options['db_pswd'], '***', $cmd) : $cmd), isset($this->options['verbose']), __FILE__, __LINE__);
     $result = shell_exec($cmd);

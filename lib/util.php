@@ -73,6 +73,27 @@ function ch_curl($url, $method='HEAD', $headers=NULL, $file=NULL, $auth=NULL, $s
 
 
 /**
+ * returns the contents of benchmark.ini as a hash
+ */
+function get_benchmark_ini() {
+  global $benchmark_ini;
+  if (!isset($benchmark_ini)) {
+    $dirs = array(dirname(__FILE__));
+    while(($dir = dirname($dirs[count($dirs) - 1])) != '/') $dirs[] = $dir;
+    foreach($dirs as $dir) {
+      if (file_exists($file = sprintf('%s/benchmark.ini', $dir))) {
+        $benchmark_ini = array();
+        foreach(file($file) as $line) {
+          if (preg_match('/^([A-Za-z][^=]+)=(.*)$/', trim($line), $m)) $benchmark_ini[$m[1]] = $m[2];
+        }
+        break;
+      }
+    }
+  }
+  return $benchmark_ini;
+}
+
+/**
  * returns the mime type for the $file specified. uses /etc/mime.types
  * @param string $file the file to return the mime type for
  * @return string
@@ -102,7 +123,7 @@ function get_mime_type($file) {
  *   hostname   => system hostname
  *   memory_gb  => system memory in gigabytes (rounded to whole number)
  *   memory_bb  => system memory in megabytes (rounded to whole number)
- *   os         => operating system name and version
+ *   os_info    => operating system name and version
  * @return array
  */
 function get_sys_info() {
@@ -114,12 +135,12 @@ function get_sys_info() {
 				if (preg_match('/(.*):(.*)/', trim($line), $m)) {
 					$key = trim($m[1]);
 					$val = preg_replace('/\s+/', ' ', trim($m[2]));
-					foreach(array('count' => 'processor', 
+					foreach(array('cores' => 'processor', 
 												'name' => 'model name',
 												'speed' => 'mhz',
 												'cache' => 'cache size') as $k => $match) {
 						if ($k == 'name') $val = str_replace('@ ', '', str_replace('CPU ', '', str_replace('Quad-Core ', '', str_replace('Processor ', '', str_replace('(tm)', '', str_replace('(R)', '', $val))))));
-						if (preg_match("/$match/i", $key)) $sys_info[sprintf('cpu%s', $k != 'name' ? $k : '')] = $k == 'count' ? $val + 1 : $val;
+						if (preg_match("/$match/i", $key)) $sys_info[sprintf('cpu%s', $k != 'name' ? '_' . $k : '')] = $k == 'cores' ? $val + 1 : $val;
 					}
 				}
 			}
@@ -144,7 +165,7 @@ function get_sys_info() {
 			$attr = str_replace('\l', '', $attr);
 			$attr = str_replace('\r', '', $attr);
 			$attr = str_replace('Welcome to', '', $attr);
-			$sys_info['os'] = trim($attr);
+			$sys_info['os_info'] = trim($attr);
 		}
   }
   return $sys_info;
@@ -181,9 +202,11 @@ function merge_options_with_config(&$options, $config) {
  * forced to arrays even if they only contain a single argument value and 
  * arguments that repeat that area not included in this argument will be set 
  * to the first specified value (others will be discarded)
+ * @param string $paramPrefix an optional prefix to apply when evaluating 
+ * bm_param_ environment variables
  * @return array
  */
-function parse_args($opts, $arrayArgs=NULL) {
+function parse_args($opts, $arrayArgs=NULL, $paramPrefix='') {
   global $argv;
   $key = NULL;
   $val = NULL;
@@ -218,7 +241,7 @@ function parse_args($opts, $arrayArgs=NULL) {
     }
     // check for environment variable
     if (!isset($options[$key]) && preg_match('/^meta_/', $key) && getenv('bm_' . str_replace('meta_', '', $key))) $options[$key] = getenv('bm_' . str_replace('meta_', '', $key));
-    if (!isset($options[$key]) && getenv("bm_param_${key}")) $options[$key] = getenv("bm_param_${key}");
+    if (!isset($options[$key]) && getenv("bm_param_${paramPrefix}${key}")) $options[$key] = getenv("bm_param_${paramPrefix}${key}");
     // convert booleans
     if (isset($options[$key]) && !strpos($long, ':')) $options[$key] = $options[$key] === '0' ? FALSE : TRUE;
     // set array parameters

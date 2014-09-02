@@ -344,7 +344,7 @@ variables (e.g. `export bm_param_test=iops`)
 * threads                   The number of threads to use for the test cycle. 
                             Per the SNIA test specification, this is a user 
                             definable parameter. The default value for this 
-                            parameter is the number of CPU cores. This 
+                            parameter is the number of CPU cores * 2. This 
                             parameter may contain the token {cpus} which will 
                             be replaced with the number of CPU cores present. 
                             It may also contain a mathematical expression in 
@@ -357,7 +357,7 @@ variables (e.g. `export bm_param_test=iops`)
                             argument
                             
 * threads_per_target_max    The maximum number of threads per target - default
-                            is 4
+                            is 8
                             
 * timeout                   Max time to permit for testing in seconds. Default 
                             is 24 hours (86400 seconds)
@@ -448,7 +448,7 @@ meta_hostname: [system under test (SUT) hostname]
 meta_memory
 meta_memory_gb: [memory in gigabytes]
 meta_memory_mb: [memory in megabyets]
-meta_os
+meta_os_info: [operating system name and version]
 meta_provider
 meta_provider_id*
 meta_region*
@@ -493,7 +493,6 @@ test*: [test identifier (e.g. iops)]
 test_started*: [when the test started]
 test_stopped: [when the test ended]
 threads: [number of threads per target]
-threads_per_target_max
 threads_total: [total number of threads]
 timeout
 wd_test_duration

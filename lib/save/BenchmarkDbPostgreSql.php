@@ -132,6 +132,7 @@ class BenchmarkDbPostgreSql extends BenchmarkDb {
                    isset($this->options['db_port']) ? ' -p ' . $this->options['db_port'] : '',
                    isset($this->options['db_user']) ? ' -U ' . $this->options['db_user'] : '',
                    '"' . str_replace('"', '\"', $query) . '" 2>/dev/null');
+    putenv('PGPASSWORD=' . $this->options['db_pswd']);
     print_msg(sprintf('Attempting to query PostgreSQL using: %s', isset($this->options['db_pswd']) ? str_replace($this->options['db_pswd'], '***', $cmd) : $cmd), isset($this->options['verbose']), __FILE__, __LINE__);
     $result = shell_exec($cmd);
     $rows = explode("\n", trim($result));

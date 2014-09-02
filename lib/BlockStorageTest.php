@@ -86,6 +86,11 @@ abstract class BlockStorageTest {
   protected $subtests = array();
   
   /**
+   * used to store reference to the super test for subtests
+   */
+  protected $controller;
+  
+  /**
    * the test identifier for the instantiated controller
    */
   protected $test;
@@ -356,16 +361,33 @@ abstract class BlockStorageTest {
       }
       $this->options['ss_start'] = $this->wdpcComplete - 4;
       $this->options['ss_stop'] = $this->wdpcComplete;
-      $this->options['ss_rounds'] = sprintf('%d to %d', $this->wdpcComplete - 4, $this->wdpcComplete);
+      $this->options['ss_rounds'] = sprintf('%d-%d', $this->wdpcComplete - 4, $this->wdpcComplete);
     }
     // add purge methods
     $purgeMethods = array();
+    print_msg(sprintf('Determining purge methods for targets %s from purge methods [%s][%s]', implode(', ', $this->options['target']), implode(', ', array_keys($this->purgeMethods)), implode(', ', $this->purgeMethods)), $this->verbose, __FILE__, __LINE__);
+    if ($this->subtests) {
+      foreach(array_keys($this->subtests) as $i) {
+        print_msg(sprintf('Sub-test purge methods [%s][%s]', implode(', ', array_keys($this->subtests[$i]->purgeMethods)), implode(', ', $this->subtests[$i]->purgeMethods)), $this->verbose, __FILE__, __LINE__);
+      }
+    }
+    if ($this->controller) print_msg(sprintf('Super-test purge methods [%s][%s]', implode(', ', array_keys($this->controller->purgeMethods)), implode(', ', $this->controller->purgeMethods)), $this->verbose, __FILE__, __LINE__);
     foreach($this->options['target'] as $target) {
-      $purgeMethods[] = sprintf('%s: %s', $target, isset($this->purgeMethods[$target]) ? $this->purgeMethods[$target] : 'None');
+      $purgeMethod = isset($this->purgeMethods[$target]) ? $this->purgeMethods[$target] : NULL;
+      if (!$purgeMethod && $this->controller && isset($this->controller->purgeMethods[$target])) $purgeMethod = $this->controller->purgeMethods[$target];
+      if (!$purgeMethod && $this->subtests) {
+        foreach(array_keys($this->subtests) as $i) {
+          if (isset($this->subtests[$i]->purgeMethods[$target])) {
+            $purgeMethod = $this->subtests[$i]->purgeMethods[$target];
+            break;
+          }
+        }
+      }
+      $purgeMethods[] = sprintf('%s: %s', $target, $purgeMethod ? $purgeMethod : 'none');
     }
     $this->options['purge_methods'] = $purgeMethods;
     // add fio version
-    $this->options['fio_version'] = str_replace('fio-', '', trim(shell_exec('fio --version')));
+    if (preg_match('/([0-9][0-9\.]+[0-9])/', trim(shell_exec('fio --version')), $m)) $this->options['fio_version'] = $m[1];
     $ofile = sprintf('%s/%s', $dir, BlockStorageTest::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME);
     if (is_dir($dir) && is_writable($dir)) {
       $fp = fopen($ofile, 'w');
@@ -1074,6 +1096,7 @@ abstract class BlockStorageTest {
   public static function getRunOptions() {
     // default run argument values
     $sysInfo = get_sys_info();
+    $ini = get_benchmark_ini();
     $defaults = array(
       'active_range' => 100,
       'fio' => 'fio',
@@ -1094,14 +1117,15 @@ abstract class BlockStorageTest {
       'meta_os' => $sysInfo['os'],
       'meta_provider' => 'Not Specified',
       'meta_storage_config' => 'Not Specified',
+      'meta_test_sw' => isset($ini['meta-id']) ? 'ch-' . $ini['meta-id'] . (isset($ini['meta-version']) ? ' ' . $ini['meta-version'] : '') : '',
       'oio_per_thread' => 64,
       'output' => trim(shell_exec('pwd')),
       'precondition_passes' => 2,
       'ss_max_rounds' => 25,
       'ss_verification' => 10,
       'test' => array('iops'),
-      'threads' => '{cpus}',
-      'threads_per_target_max' => 4,
+      'threads' => '{cpus}*2',
+      'threads_per_target_max' => 8,
       'timeout' => 86400,
       'wd_test_duration' => 60
     );

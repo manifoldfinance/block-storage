@@ -335,7 +335,7 @@ ARGUMENTS:
 --threads                   The number of threads to use for the test cycle. 
                             Per the SNIA test specification, this is a user 
                             definable parameter. The default value for this 
-                            parameter is the number of CPU cores. This 
+                            parameter is the number of CPU cores * 2. This 
                             parameter may contain the token {cpus} which will 
                             be replaced with the number of CPU cores present. 
                             It may also contain a mathematical expression in 
@@ -348,7 +348,7 @@ ARGUMENTS:
                             argument
                             
 --threads_per_target_max    The maximum number of threads per target - default
-                            is 4
+                            is 8
 
 --timeout                   Max time to permit for testing in seconds. Default 
                             is 24 hours (86400 seconds)

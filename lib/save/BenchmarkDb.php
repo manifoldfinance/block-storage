@@ -39,11 +39,6 @@ class BenchmarkDb {
   private $artifacts = array();
   
   /**
-   * reference to data contained in benchmark.ini
-   */
-  protected $benchmarkIni;
-  
-  /**
    * the directory where CSV files will be written to
    */
   protected $dir;
@@ -77,22 +72,8 @@ class BenchmarkDb {
    */
   private final function addBenchmarkMeta(&$row) {
     // find benchmark.ini
-    if (!isset($this->benchmarkIni)) {
-      $this->benchmarkIni = FALSE;
-      $dirs = array(dirname(__FILE__));
-      while(($dir = dirname($dirs[count($dirs) - 1])) != '/') $dirs[] = $dir;
-      foreach($dirs as $dir) {
-        if (file_exists($file = sprintf('%s/benchmark.ini', $dir))) {
-          $this->benchmarkIni = array();
-          foreach(file($file) as $line) {
-            if (preg_match('/^([A-Za-z][^=]+)=(.*)$/', trim($line), $m)) $this->benchmarkIni[$m[1]] = $m[2];
-          }
-          break;
-        }
-      }
-    }
-    if ($this->benchmarkIni) {
-      if (isset($this->benchmarkIni['meta-version'])) $row['benchmark_version'] = $this->benchmarkIni['meta-version'];
+    if ($ini = get_benchmark_ini()) {
+      if (isset($ini['meta-version'])) $row['benchmark_version'] = $ini['meta-version']; 
     }
   }
   
@@ -123,7 +104,7 @@ class BenchmarkDb {
    */
   public static function &getDb() {
     $db = NULL;
-    $options = parse_args(array('db:', 'db_and_csv:', 'db_callback_header:', 'db_host:', 'db_name:', 'db_port:', 'db_pswd:', 'db_prefix:', 'db_user:', 'output:', 'remove:', 'store:', 'v' => 'verbose'), array('remove'));
+    $options = parse_args(array('db:', 'db_and_csv:', 'db_callback_header:', 'db_host:', 'db_name:', 'db_port:', 'db_pswd:', 'db_prefix:', 'db_user:', 'output:', 'remove:', 'store:', 'v' => 'verbose'), array('remove'), 'save_');
     merge_options_with_config($options, BenchmarkDb::BENCHMARK_DB_CONFIG_FILE);
     if (!isset($options['remove'])) $options['remove'] = array();
     // explode remove options specified in config

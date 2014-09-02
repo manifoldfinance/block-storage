@@ -25,7 +25,7 @@ abstract class BenchmarkArchiver {
   /**
    * default artifact prefix
    */
-  const DEFAULT_PREFIX = '{date|meta_test_id}/{meta_compute_service_id|meta_provider_id}/{meta_instance_id}/{meta_storage_config}/{meta_region}/{meta_resource_id|hostname}/{meta_run_id|rand}/{iteration}';
+  const DEFAULT_PREFIX = '{benchmark}_{version}/{meta_compute_service_id|meta_provider_id}/{meta_instance_id}/{meta_storage_config}/{meta_region}/{date|meta_test_id}/{meta_resource_id|hostname}/{meta_run_id|rand}-{iteration}';
   
   /**
    * archiver options
@@ -43,7 +43,7 @@ abstract class BenchmarkArchiver {
    */
   public static function &getArchiver() {
     $archiver = NULL;
-    $options = parse_args(array('store:', 'store_container:', 'store_endpoint:', 'store_insecure', 'store_key:', 'store_prefix:', 'store_public', 'store_region:', 'store_secret:', 'v' => 'verbose'));
+    $options = parse_args(array('store:', 'store_container:', 'store_endpoint:', 'store_insecure', 'store_key:', 'store_prefix:', 'store_public', 'store_region:', 'store_secret:', 'v' => 'verbose'), NULL, 'save_');
     merge_options_with_config($options, BenchmarkDb::BENCHMARK_DB_CONFIG_FILE);
     $impl = 'BenchmarkArchiver';
     switch($options['store']) {
@@ -83,6 +83,10 @@ abstract class BenchmarkArchiver {
    *                      http://php.net/manual/en/function.date.php
    *                      for valid format options - 
    *                      default format is Y-m-d)
+   *   {benchmark}     => benchmark name (block-storage)
+   *                      (meta-id value in benchmark.ini)
+   *   {version}       => benchmark version (1.0)
+   *                      (meta-version value in benchmark.ini)
    *   {iteration}     => iteration number
    *   {hostname}      => the compute instance hostname
    *   {meta_*}        => any of the meta_* runtime 
@@ -97,6 +101,7 @@ abstract class BenchmarkArchiver {
   protected final function getObjectUri($file) {
     $prefix = isset($this->options['store_prefix']) ? $this->options['store_prefix'] : BenchmarkArchiver::DEFAULT_PREFIX;
     if (preg_match_all('/{([^}]+)}/', $prefix, $m)) {
+      $ini = get_benchmark_ini();
       $options = file_exists($options = dirname($file) . '/.options') ? unserialize(file_get_contents($options)) : NULL;
       foreach($m[1] as $value) {
         $sub = '';
@@ -106,6 +111,8 @@ abstract class BenchmarkArchiver {
             $format = $d[1] ? $d[1] : 'Y-m-d';
             $sub = date($format, filemtime($file));
           }
+          else if ($check == 'benchmark') $sub = isset($ini['meta-id']) ? $ini['meta-id'] : '';
+          else if ($check == 'version') $sub = isset($ini['meta-version']) ? str_replace('.', '_', $ini['meta-version']) : '';
           else if ($check == 'iteration') $sub = is_numeric(basename(dirname($file))) ? basename(dirname($file))*1 : 1;
           else if ($check == 'hostname') $sub = trim(shell_exec('hostname'));
           else if ($check == 'rand') $sub = '[rand]';

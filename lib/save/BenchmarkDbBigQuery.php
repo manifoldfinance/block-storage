@@ -44,6 +44,7 @@ class BenchmarkDbBigQuery extends BenchmarkDb {
     if (preg_match('/int/', $type)) $btype = 'integer';
     else if (preg_match('/float/', $type)) $btype = 'float';
     else if (preg_match('/time/', $type)) $btype = 'timestamp';
+    else if (preg_match('/text/', $type)) $btype = 'string';
     return $btype;
   }
   

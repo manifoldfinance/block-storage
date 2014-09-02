@@ -165,6 +165,10 @@ line delimited config file located in ~/.ch_benchmark (e.g. db_host=localhost)
                                                  http://php.net/manual/en/function.date.php
                                                  for valid format options - 
                                                  default format is Y-m-d)
+                              {benchmark}     => benchmark name (block-storage)
+                                                 (meta-id value in benchmark.ini)
+                              {version}       => benchmark version (e.g. 1_0)
+                                                 (meta-version value in benchmark.ini)
                               {iteration}     => iteration number
                               {hostname}      => the compute instance hostname
                               {meta_*}        => any of the meta_* runtime 
@@ -185,7 +189,7 @@ line delimited config file located in ~/.ch_benchmark (e.g. db_host=localhost)
                             be used. All substitions are lowercase
                             
                             The default prefix is: 
-                            {date|meta_test_id}/{meta_compute_service_id|meta_provider_id}/{meta_instance_id}/{meta_storage_config}/{meta_region}/{meta_resource_id|hostname}/{meta_run_id|rand}/{iteration}
+                            {benchmark}_{version}/{meta_compute_service_id|meta_provider_id}/{meta_instance_id}/{meta_storage_config}/{meta_region}/{date|meta_test_id}/{meta_resource_id|hostname}/{meta_run_id|rand}-{iteration}
                             
 --store_public              If the --store argument is set, this argument 
                             will result in stored artifact URLs being publicly 
