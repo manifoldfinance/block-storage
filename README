@@ -385,7 +385,7 @@ This benchmark suite uses the following packages:
   gnuplot     Generates graphs per the SNIA test specification. These graphs
               are used in the PDF report
   hdparm      Used for ATA secure erase (when supported)
-  php-cli     Scripting for automation of test logic (/usr/bin/php)
+  php-cli     Test automation scripts (/usr/bin/php)
   util-linux  For TRIM operations using `blkdiscard` and `fstrim` (when 
               supported). Not required if test targets are rotational
   wkhtmltopdf Generates PDF version of report - download from 
