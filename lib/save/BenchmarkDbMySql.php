@@ -109,7 +109,7 @@ class BenchmarkDbMySql extends BenchmarkDb {
    */
   protected function validate() {
     if ($valid = parent::validate()) {
-      $table = $this->getTableName(rand());
+      $table = 'test_' . $this->getTableName(rand());
       if ($this->mysql('create table ' . $table . ' (id int)') !== NULL) {
         // try to load some data into the table
         $fp = fopen($tmp = '/tmp/' . $table, 'w');
@@ -132,7 +132,7 @@ class BenchmarkDbMySql extends BenchmarkDb {
       }
       else {
         $valid = FALSE;
-        print_msg(sprintf('MySQL connection failed - %s', $this->mysql() !== NULL ? 'user does cannot create tables' : 'unable to connect to server'), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
+        print_msg(sprintf('MySQL connection failed - %s', $this->mysql() !== NULL ? 'user cannot create tables' : 'unable to connect to server'), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
       }
     }
     return $valid;

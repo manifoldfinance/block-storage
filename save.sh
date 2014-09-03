@@ -100,6 +100,10 @@ line delimited config file located in ~/.ch_benchmark (e.g. db_host=localhost)
                             [test] for each individual test (e.g. 'iops', 
                             'latency', 'throughput')
                             
+--db_suffix                 If the --db argument is set, this argument 
+                            specifies an optional suffix to use for the results
+                            table. Default table suffix is '_1_0'
+                            
 --db_user                   If the --db argument is set, this argument 
                             specifies the database server username. Not 
                             applicable to Google BigQuery. HTTP AUTH user for 

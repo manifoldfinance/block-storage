@@ -33,6 +33,8 @@ if (is_dir(sprintf('%s/1', $dir))) {
 else $dirs[] = $dir;
 
 if ($db =& BenchmarkDb::getDb()) {
+  $db->tablePrefix = 'block_storage_';
+  
   // get results from each directory
   foreach($dirs as $i => $dir) {
     $iteration = $i + 1;
