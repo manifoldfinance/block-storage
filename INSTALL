@@ -46,6 +46,10 @@ sudo rpm -i http://downloads.sourceforge.net/project/wkhtmltopdf/0.12.1/wkhtmlto
 sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin
 
 
+# Setup BigQuery (see save.sh)
+curl https://sdk.cloud.google.com | bash
+gcloud auth login
+
 
 # RUN TESTS
 
