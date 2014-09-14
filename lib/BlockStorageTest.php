@@ -1199,12 +1199,8 @@ abstract class BlockStorageTest {
         $options[$key] = $targets;
       }
     }
-    foreach($_SERVER['argv'] as $arg) {
-      if (preg_match('/^\-\-fio_(.*)$/', $arg, $m)) {
-        $pieces = explode('=', $m[1]);
-        $options['fio_options'][trim(strtolower($pieces[0]))] = isset($pieces[1]) ? trim($pieces[1]) : TRUE;
-      }
-    }
+    foreach(get_prefixed_params('fio_') as $key => $val) $options['fio_options'][$key] = $val;
+    
     // don't use random IO
     if (isset($options['norandom']) && $options['norandom']) {
       unset($options['fio']['refill_buffers']);
