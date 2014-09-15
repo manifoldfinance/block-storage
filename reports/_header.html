@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<title><?php echo $title ?></title>
-	<?php if (!isset($options['no3dcharts']) || !$this->options['no3dcharts']) { ?>
+	<?php if (!isset($options['no3dcharts']) || !$options['no3dcharts']) { ?>
 	<script src="<?php echo $options['jquery_url'] ?>"></script>
 	<script src="<?php echo $options['highcharts_js_url'] ?>"></script>
 	<script src="<?php echo $options['highcharts3d_js_url'] ?>"></script>
