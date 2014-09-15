@@ -855,16 +855,19 @@ abstract class BlockStorageTest {
   /**
    * returns the device path for $target
    * @param string $target the path to check
+   * @param boolean $removeNumericSuffix whether or not to remove the device 
+   * numeric suffix (if present)
    * @return string
    */
-  public static function getDevice($target) {
+  public static function getDevice($target, $removeNumericSuffix=FALSE) {
     $device = NULL;
+    
     if ($target) {
       if (preg_match('/^\/dev\//', $target)) $device = $target;
-      else {
-        if (!($device = trim(shell_exec(sprintf('df --output=source %s | sed -e /^Filesystem/d', $target))))) $device = NULL;
-      }
+      else if (!($device = trim(shell_exec(sprintf('df --output=source %s | sed -e /^Filesystem/d', $target))))) $device = NULL;
     }
+    if ($device && $removeNumericSuffix && preg_match('/[a-z]([0-9]+)$/', $device, $m)) $device = substr($device, 0, strlen($m[1])*-1);
+    
     return $device;
   }
   
@@ -1344,7 +1347,7 @@ abstract class BlockStorageTest {
    */
   public static function isRotational($target) {
     $rotational = FALSE;
-    if ($device = BlockStorageTest::getDevice($target)) {
+    if ($device = BlockStorageTest::getDevice($target, TRUE)) {
       if (file_exists($file = sprintf('/sys/block/%s/queue/rotational', basename($device)))) {
         $rotational = trim(file_get_contents($file)) == '1';
       }
