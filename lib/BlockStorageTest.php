@@ -289,7 +289,7 @@ abstract class BlockStorageTest {
    */
   protected final function generate3dChart($section, $series, $settings=array(), $zAxisTitle=NULL) {
     $chart = NULL;
-    if (isset($this->options['no3dcharts'])) $chart = '3D charts disabled - see preceding tabular data';
+    if (isset($this->options['no3dcharts']) && $this->options['no3dcharts']) $chart = '3D charts disabled - see preceding tabular data';
     else if ($section && is_array($series) && count($series) && is_array($settings)) {
       // assign series colors
       if (!isset($settings['colors'])) $settings['colors'] = $this->getGraphColors();
@@ -1348,7 +1348,7 @@ abstract class BlockStorageTest {
       if (file_exists($file = sprintf('/sys/block/%s/queue/rotational', basename($device)))) {
         $rotational = trim(file_get_contents($file)) == '1';
       }
-      else print_msg(sprintf('Unable to check if %s is rotational because file %s does not exist', $device, $file), TRUE, __FILE__, __LINE__, TRUE);
+      else print_msg(sprintf('Unable to check if %s is rotational because file %s does not exist', $device, $file), TRUE, __FILE__, __LINE__);
     }
     return $rotational;
   }
@@ -1508,7 +1508,7 @@ abstract class BlockStorageTest {
   }
   
   /**
-   * validates test dependencies including the following:
+   * validates test dependencies including:
    *   fio         Performs actual testing - version 2.0+ required
    *   gnuplot     Generates graphs per the SNIA test specification. These graphs
    *               are used in the PDF report
@@ -1518,7 +1518,8 @@ abstract class BlockStorageTest {
    *   wkhtmltopdf Generates PDF version of report - download from 
    *               http://wkhtmltopdf.org
    *   zip         Archives HTML test report into a single zip file
-   * returns an array representing the dependencies that are not present
+   * returns an array containing the missing dependencies (array is empty if 
+   * all dependencies are valid)
    * @param array $options the run options (see BlockStorageTest::getRunOptions)
    * @return array
    */
