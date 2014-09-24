@@ -118,6 +118,10 @@ line delimited config file located in ~/.ch_benchmark (e.g. db_host=localhost)
                             that the user needs copy permissions in place of
                             MySQL load data infile
                             
+--iteration                 Explicit iteration number for test results - 
+                            otherwise 1 will be assumed unless results are in 
+                            numbered sub-directories
+                            
 --nosave_fio                Do not save results for individual fio jobs
                             
 --nostore_json              Do not store JSON file artifacts
