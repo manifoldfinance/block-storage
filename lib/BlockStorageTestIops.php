@@ -213,7 +213,7 @@ class BlockStorageTestIops extends BlockStorageTest {
     return array(
       'AR Segments' => 'N/A',
       'Pre Condition 1' => $this->wipc ? 'SEQ 128K W' : 'None',
-      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD 1', $this->wipcThreads()) : 'N/A',
+      '&nbsp;&nbsp;TOIO - TC/QD' => $this->wipc ? sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']) : 'N/A',
       '&nbsp;&nbsp;Duration' => $this->wipc ? sprintf('%dX %s Capacity%s', $this->options['precondition_passes'], $this->deviceTargets ? 'Device' : 'Volume', $this->options['active_range'] < 100 ? ' (' . $this->options['active_range'] . '% AR)' : '') : 'N/A',
       'Pre Condition 2' => 'IOPS Loop',
       '&nbsp;&nbsp;TOIO - TC/QD ' => sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']),

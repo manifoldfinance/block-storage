@@ -299,6 +299,9 @@ variables (e.g. `export bm_param_test=iops`)
                             will be limited to the least amount of free space 
                             on all targets
                             
+* target_skip_not_present   If set, targets specified that do not exist will be
+                            ignored (so long as at least 1 target exists)
+                            
 * test                      The SNIA SSS PTS tests to perform. One or more of 
                             the following:
                               iops:       IOPS Test - measures IOPS at a range 
@@ -349,7 +352,7 @@ variables (e.g. `export bm_param_test=iops`)
 * threads                   The number of threads to use for the test cycle. 
                             Per the SNIA test specification, this is a user 
                             definable parameter. The default value for this 
-                            parameter is the number of CPU cores * 2. This 
+                            parameter is the number of CPU cores. This 
                             parameter may contain the token {cpus} which will 
                             be replaced with the number of CPU cores present. 
                             It may also contain a mathematical expression in 
@@ -361,8 +364,12 @@ variables (e.g. `export bm_param_test=iops`)
                             This parameter is used to define the fio --numjobs
                             argument
                             
-* threads_per_target_max    The maximum number of threads per target - default
-                            is 8
+* threads_per_core_max      Max number of threads per CPU core - default is 2.
+                            If this parameter causes the number of threads per
+                            target to be less than 1, threads per target will 
+                            be increased to 1
+                            
+* threads_per_target_max    Max number of threads per target - default is 8
                             
 * timeout                   Max time to permit for testing in seconds. Default 
                             is 24 hours (86400 seconds)

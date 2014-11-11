@@ -188,13 +188,15 @@ abstract class BlockStorageTest {
    * default options)
    * @param string $step the identifier of the current test step (e.g. 
    * precondition)
+   * @param string $target specific target to use (otherwise all targets will
+   * be assumed)
    * @param boolean $concurrent whether or not to invoke fio concurrently 
    * on all targets or sequentially, one at a time
-   * @param string $tareget specific target to use (otherwise all targets will
-   * be assumed)
+   * @param boolean $offsetThreads if TRUE, threads will be offset such that
+   * individual threads do not read/write the same sections of the targets
    * @return boolean
    */
-  protected function fio($options, $step, $target=NULL, $concurrent=TRUE) {
+  protected function fio($options, $step, $target=NULL, $concurrent=TRUE, $offsetThreads=FALSE) {
     $success = FALSE;
     $targets = $target ? array($target) : $this->options['target'];
     
@@ -214,6 +216,7 @@ abstract class BlockStorageTest {
       $options = array_merge($this->options['fio_options'], $options);
       if (!isset($options['numjobs'])) {
         $options['numjobs'] = count($targets) * $this->options['threads'];
+        if ($options['numjobs'] <= 0) $options['numjobs'] = 1;
       }
       if (!isset($options['iodepth'])) $options['iodepth'] = $this->options['oio_per_thread'];
       if (!isset($options['filename'])) {
@@ -227,7 +230,7 @@ abstract class BlockStorageTest {
       // determine size
       if (!isset($options['size'])) {
         // for devices use relative size
-        if ($this->deviceTargets) $options['size'] = $this->options['active_range'] . '%';
+        if ($this->deviceTargets && (!$offsetThreads || $options['numjobs'] == 1)) $options['size'] = $this->options['active_range'] . '%';
         // for volumes use fixed size (total free space - )
         else {
           $size = NULL;
@@ -237,7 +240,7 @@ abstract class BlockStorageTest {
           }
           // reduce size according to active range (if < 100%) or free space buffer
           if ($this->options['active_range'] < 100) $size *= ($this->options['active_range'] * 0.01);
-          else $size -= BlockStorageTest::BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER;
+          else if (!$this->deviceTargets) $size -= BlockStorageTest::BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER;
           $size = round($size);
           // not enough free space to continue
           if ($size < 1) {
@@ -245,11 +248,22 @@ abstract class BlockStorageTest {
             return FALSE;
           }
           else {
-            print_msg(sprintf('Testing volume type targets using size %d MB', $size), $this->verbose, __FILE__, __LINE__);
-            $options['size'] = $size . 'm';
+            if ($offsetThreads && $options['numjobs'] > 1) {
+              $numjobs = $options['numjobs'];
+              $threadSize = round($size/$numjobs);
+              print_msg(sprintf('Testing %s type targets using offset threads. Total test size is %d MB. Size per thread/offset_increment is %d MB', $this->deviceTargets ? 'device' : 'volume', $size, $threadSize), $this->verbose, __FILE__, __LINE__);
+              $options['size'] = $threadSize . 'm';
+              $options['offset_increment'] = $threadSize . 'm';
+            }
+            else {
+              print_msg(sprintf('Testing volume type targets using size %d MB', $size), $this->verbose, __FILE__, __LINE__);
+              $options['size'] = $size . 'm';
+            }
             // register shutdown method so test files are deleted
-            foreach($targets as $target) {
-              if ($this->volumeTargets && !file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) register_shutdown_function('unlink', $file);
+            if (!$this->deviceTargets) {
+              foreach($targets as $target) {
+                if ($this->volumeTargets && !file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) register_shutdown_function('unlink', $file);
+              } 
             }
           }
         }
@@ -1127,7 +1141,8 @@ abstract class BlockStorageTest {
       'ss_max_rounds' => 25,
       'ss_verification' => 10,
       'test' => array('iops'),
-      'threads' => '{cpus}*2',
+      'threads' => '{cpus}',
+      'threads_per_core_max' => 2,
       'threads_per_target_max' => 8,
       'timeout' => 86400,
       'wd_test_duration' => 60
@@ -1179,8 +1194,10 @@ abstract class BlockStorageTest {
       'ss_max_rounds:',
       'ss_verification:',
       'target:',
+      'target_skip_not_present',
       'test:',
       'threads:',
+      'threads_per_core_max:',
       'threads_per_target_max:',
       'timeout:',
       'trim_offset_end:',
@@ -1188,6 +1205,8 @@ abstract class BlockStorageTest {
       'wd_test_duration:'
     );
     $options = parse_args($opts, array('skip_blocksize', 'skip_workload', 'target', 'test'));
+    $verbose = isset($options['verbose']) && $options['verbose'];
+    
     // explicit fio command
     foreach($defaults as $key => $val) {
       if (!isset($options[$key])) $options[$key] = $val;
@@ -1224,6 +1243,18 @@ abstract class BlockStorageTest {
       if ($options['threads'] <= 0) $options['threads'] = 1;
     }
     
+    // remove targets that are not present
+    if (isset($options['target_skip_not_present']) && isset($options['target']) && count($options['target']) > 1) {
+      print_msg(sprintf('Checking targets %s because --target_skip_not_present argument was set', implode(', ', $options['target'])), $verbose, __FILE__, __LINE__);
+      $targets = array();
+      foreach($options['target'] as $i => $target) {
+        if (!is_dir($target) && !file_exists($target)) print_msg(sprintf('Skipped test target %s because it does not exist and the --target_skip_not_present argument was set', $target), $verbose, __FILE__, __LINE__);
+        else $targets[] = $target;
+      }
+      $options['target'] = $targets;
+      print_msg(sprintf('Adjusted test targets is %s', implode(', ', $options['target'])), $verbose, __FILE__, __LINE__);
+    }
+    
     // adjust threads for number of targets
     if (isset($options['target']) && count($options['target']) > 1) {
       $options['threads'] = round($options['threads']/count($options['target']));
@@ -1231,9 +1262,24 @@ abstract class BlockStorageTest {
     }
     
     // adjust for threads_per_target_max
-    if (isset($options['threads_per_target_max']) && $options['threads'] > $options['threads_per_target_max']) $options['threads'] = $options['threads_per_target_max'];
+    if (isset($options['threads_per_target_max']) && $options['threads'] > $options['threads_per_target_max']) {
+      $threads = $options['threads'];
+      $options['threads'] = $options['threads_per_target_max'];
+      print_msg(sprintf('Reduced threads from %d to %d for threads_per_target_max constraint %d', $threads, $options['threads'], $options['threads_per_target_max']), $verbose, __FILE__, __LINE__);
+    }
     
     $options['threads_total'] = $options['threads']*count($options['target']);
+    
+    // adjust for threads_per_core_max
+    if (isset($options['threads_per_core_max']) && $options['threads_total'] > ($options['threads_per_core_max']*BlockStorageTest::getCpuCount())) {
+      $threads_total = $options['threads_total'];
+      $threads = $options['threads'];
+      $options['threads'] = round(($options['threads_per_core_max']*BlockStorageTest::getCpuCount())/count($options['target']));
+      if (!$options['threads']) $options['threads'] = 1;
+      $options['threads_total'] = round($options['threads']*count($options['target']));
+      if ($threads != $options['threads']) print_msg(sprintf('Reduced total threads from %d to %d [threads per target from %d to %s] for threads_per_core_max constraint %d, %d CPU cores, and %d targets', $threads_total, $options['threads_total'], $threads, $options['threads'], $options['threads_per_core_max'], BlockStorageTest::getCpuCount(), count($options['target'])), $verbose, __FILE__, __LINE__);
+      else print_msg(sprintf('Ignoring threads_per_core_max constraint %d because at least 1 thread per target is required', $options['threads_per_core_max']), $verbose, __FILE__, __LINE__);
+    }
     
     return $options;
   }
@@ -1582,6 +1628,7 @@ abstract class BlockStorageTest {
       'target' => array('required' => TRUE, 'write' => TRUE),
       'test' => array('option' => BlockStorageTest::getSupportedTests(), 'required' => TRUE),
       'threads' => array('min' => 1),
+      'threads_per_core_max' => array('min' => 1),
       'threads_per_target_max' => array('min' => 1),
       'timeout' => array('min' => 3600),
       'trim_offset_end' => array('min' => 1),
@@ -1615,9 +1662,10 @@ abstract class BlockStorageTest {
     if (!$noprecondition) {
       print_msg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). This may take a while...', $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
       for($i=1; $i<=$this->options['precondition_passes']; $i++) {
-        $opts = array('blocksize' => $bs, 'rw' => 'write', 'iodepth' => 1, 'numjobs' => $this->wipcThreads());
+        
+        $opts = array('blocksize' => $bs, 'rw' => 'write');
         print_msg(sprintf('Attempting workload independent precondition pass %d of %d', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
-        if ($this->fio($opts, 'wipc')) {
+        if ($this->fio($opts, 'wipc', NULL, TRUE, TRUE)) {
           $this->wipc = TRUE;
           print_msg(sprintf('Workload independent precondition pass %d of %d successful', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
         }
@@ -1630,16 +1678,6 @@ abstract class BlockStorageTest {
     else print_msg(sprintf('Skipping workload independent preconditioning for test %s', $this->test), $this->verbose, __FILE__, __LINE__);
     
     return $this->wipc || $this->skipWipc;
-  }
-  
-  /**
-   * Returns the total number of threads to use for workload independent 
-   * preconditioning
-   * @return int
-   */
-  protected final function wipcThreads() {
-    // return count($this->options['target']) < $this->options['threads_total'] ? count($this->options['target']) : $this->options['threads_total'];
-    return 1;
   }
   
   /**

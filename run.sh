@@ -284,6 +284,9 @@ ARGUMENTS:
                             volume type targets are specified, active range 
                             will be limited to the least amount of free space 
                             on all targets
+                            
+--target_skip_not_present   If set, targets specified that do not exist will be
+                            ignored (so long as at least 1 target exists)
 
 --test                      The SNIA SSS PTS tests to perform. One or more of 
                             the following:
