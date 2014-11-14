@@ -926,7 +926,7 @@ abstract class BlockStorageTest {
     $params = array(
       'Storage Config' => $this->options['meta_storage_config'],
       "# ${t}s" => count($this->options['target']),
-      "${t}s" => implode(', ', $this->options['target']),
+      "${t}s" => implode(', ', count($this->options['target']) > 8 ? array_merge(array_slice($this->options['target'], 0, 4), array('...'), array_slice($this->options['target'], -4)) : $this->options['target']),
       "${t} Capacities" => $capacities,
       'Purge Methods' => $purge,
       'Volume Info' => $volInfo,
