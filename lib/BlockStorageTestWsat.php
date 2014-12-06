@@ -167,7 +167,7 @@ class BlockStorageTestWsat extends BlockStorageTest {
       foreach(array_keys($jobs) as $job) {
         if (isset($jobs[$job]['write']['iops'])) $iops[] = $jobs[$job]['write']['iops'];
       }
-      if ($iops) $metrics['mean_iops'] = round(array_sum($iops)/count($iops));
+      if ($iops) $metrics['wsat_iops'] = round(array_sum($iops)/count($iops));
     }
     return $metrics;
   }
