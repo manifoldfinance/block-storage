@@ -21,7 +21,7 @@
 require_once(dirname(__FILE__) . '/BlockStorageTest.php');
 require_once(dirname(__FILE__) . '/save/BenchmarkDb.php');
 $status = 1;
-$args = parse_args(array('iteration:', 'nosave_fio', 'nostore_json', 'nostore_pdf', 'nostore_zip', 'v' => 'verbose'));
+$args = parse_args(array('iteration:', 'nosave_fio', 'nostore_json', 'nostore_pdf', 'nostore_rrd', 'nostore_zip', 'v' => 'verbose'));
 
 // get result directories => each directory stores 1 iteration of results
 $dirs = array();
@@ -60,6 +60,12 @@ if ($db =& BenchmarkDb::getDb()) {
         $results['iteration'] = $iteration;
         $results = array_merge(BlockStorageTest::getMetaCols($dir), $results);
         $results['test'] = $test;
+        // save collectd rrd files
+        if (!isset($args['nostore_rrd']) && file_exists($file = sprintf('%s/collectd-rrd-%s.zip', $dir, $test))) {
+          $saved = $db->saveArtifact($file, 'collectd_rrd');
+          if ($saved) print_msg(sprintf('Saved collectd rrd files %s successfully', basename($file)), isset($args['verbose']), __FILE__, __LINE__);
+          else if ($saved === NULL) print_msg(sprintf('Unable to save collectd rrd files %s', basename($file)), isset($args['verbose']), __FILE__, __LINE__, TRUE);
+        }
         if ($db->addRow($test, $results)) print_msg(sprintf('Successfully saved %s test results', $test), isset($args['verbose']), __FILE__, __LINE__);
         else print_msg(sprintf('Failed to save %s test results', $test), isset($args['verbose']), __FILE__, __LINE__, TRUE);
         

@@ -43,6 +43,11 @@ abstract class BlockStorageTest {
   const BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER = 100;
   
   /**
+   * formula to use for --wd_sleep_between ebs
+   */
+  const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_EBS = '{duration}*({size} >= 1000 ? 0 : ({size} >= 750 ? 0.33 : ({size} >= 500 ? 1 : ({size} >= 250 ? 3 : ({size} >= 100 ? 9 : 100)))))';
+  
+  /**
    * true if targets are devices
    */
   protected $deviceTargets = FALSE;
@@ -270,6 +275,7 @@ abstract class BlockStorageTest {
       }
       foreach($options as $opt => $val) $cmd .= sprintf(' --%s%s', $opt, $val !== FALSE && $val !== NULL ? '=' . $val : '');
       print_msg(sprintf('Starting fio using command: %s', $cmd), $this->verbose, __FILE__, __LINE__);
+      $start = time();
       $started = date('Y-m-d H:i:s');
       if ($result = json_decode(trim(shell_exec($cmd . ' 2>/dev/null')), TRUE)) {
         $iops = NULL;
@@ -283,6 +289,28 @@ abstract class BlockStorageTest {
           $result['jobs'][0]['stopped'] = date('Y-m-d H:i:s');
           $this->fio[$step][] = $result;
           print_msg(sprintf('fio execution successful for step %s with %d IOPS (%s MB/s). There are now %d results for this step', $step, $iops, $mbps, count($this->fio[$step])), $this->verbose, __FILE__, __LINE__);
+          // wd_sleep_between parameter
+          if ($step == 'wdpc' && isset($this->options['wd_sleep_between'])) {
+            $duration = time() - $start;
+            $volumes = 0;
+            $sizes = array();
+            foreach($this->options['target'] as $target) {
+              $sizes[] = BlockStorageTest::getFreeSpace($target)/1024;
+              $volumes++;
+            }
+            $size = round(array_sum($sizes)/count($sizes));
+            $formula = str_replace(' ', '', $this->options['wd_sleep_between'] == 'ebs' ? BlockStorageTest::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_EBS : $this->options['wd_sleep_between']);
+            $formula = str_replace('{duration}', $duration, $formula);
+            $formula = str_replace('{size}', $size, $formula);
+            $formula = str_replace('{volumes}', $volumes, $formula);
+            eval(sprintf('$value=round(%s);', $formula));
+            $value *= 1;
+            print_msg(sprintf('--wd_sleep_between "%s" evaluated to %d using formula "%s" and parameters duration=%d; volumes=%d; size=%d', $this->options['wd_sleep_between'], $value, $formula, $duration, $volumes, $size), $this->verbose, __FILE__, __LINE__);
+            if ($value > 0) {
+              print_msg(sprintf('sleeping for %d seconds for --wd_sleep_between', $value), $this->verbose, __FILE__, __LINE__);
+              sleep($value);
+            }
+          }
         }
         else print_msg(sprintf('fio execution failed with an error for step %s', $step), $this->verbose, __FILE__, __LINE__, TRUE);
       }
@@ -1116,6 +1144,7 @@ abstract class BlockStorageTest {
     $ini = get_benchmark_ini();
     $defaults = array(
       'active_range' => 100,
+      'collectd_rrd_dir' => '/var/lib/collectd/rrd',
       'fio' => 'fio',
       'fio_options' => array(
         'direct' => TRUE,
@@ -1149,6 +1178,8 @@ abstract class BlockStorageTest {
     );
     $opts = array(
       'active_range:',
+      'collectd_rrd',
+      'collectd_rrd_dir:',
       'fio:',
       'font_size:',
       'highcharts_js_url:',
@@ -1202,7 +1233,8 @@ abstract class BlockStorageTest {
       'timeout:',
       'trim_offset_end:',
       'v' => 'verbose',
-      'wd_test_duration:'
+      'wd_test_duration:',
+      'wd_sleep_between:'
     );
     $options = parse_args($opts, array('skip_blocksize', 'skip_workload', 'target', 'test'));
     $verbose = isset($options['verbose']) && $options['verbose'];
@@ -1504,7 +1536,8 @@ abstract class BlockStorageTest {
         else print_msg(sprintf('ATA secure erase not be attempted for %s because %s', $target, $nosecureerase ? '--nosecureerase argument was specified (or implied due to lack of --secureerase_pswd argument)' : 'it is not a device'), $this->verbose, __FILE__, __LINE__);
 
         // next try TRIM
-        if (!$purged && !$rotational && !$notrim) {
+        // if (!$purged && !$rotational && !$notrim) {
+        if (!$purged && !$notrim) {
           $cmd = sprintf(($this->deviceTargets ? 'blkdiscard' : 'fstrim') . '%s %s >/dev/null 2>&1; echo $?', $this->deviceTargets && isset($this->options['trim_offset_end']) && $this->options['trim_offset_end'] > 0 ? sprintf(' -o 0 -l %d', BlockStorageTest::getFreeSpace($target, TRUE) - $this->options['trim_offset_end']) : '', $this->deviceTargets ? $target : $volume);
           print_msg(sprintf('Attempting TRIM for volume %s using command %s', $volume, $cmd), $this->verbose, __FILE__, __LINE__);
           $ecode = trim(exec($cmd));
@@ -1554,6 +1587,29 @@ abstract class BlockStorageTest {
       } 
     }
     return $purgeCount == count($this->options['target']);
+  }
+  
+  /**
+   * invoked before starting tests
+   * @return void
+   */
+  public function start() {
+    if (isset($this->options['collectd_rrd'])) ch_collectd_rrd_start($this->options['collectd_rrd_dir'], isset($this->options['verbose']));
+  }
+  
+  /**
+   * invoked after testing ends
+   * @return void
+   */
+  public function stop() {
+    if (isset($this->options['collectd_rrd'])) {
+      ch_collectd_rrd_stop($this->options['collectd_rrd_dir'], $this->options['output'], isset($this->options['verbose']));
+      if (is_file($archive = sprintf('%s/collectd-rrd.zip', $this->options['output']))) {
+        $narchive = str_replace('.zip', '-' . $this->test . '.zip', $archive);
+        exec(sprintf('mv %s %s', $archive, $narchive));
+        print_msg(sprintf('Renamed collectd rrd archive from %s to %s', basename($archive), basename($narchive)), $this->verbose, __FILE__, __LINE__);
+      }
+    }
   }
   
   /**
@@ -1643,7 +1699,16 @@ abstract class BlockStorageTest {
         $device == $target ? $devices++ : $volumes++;
       }
       if ($devices && $volumes) $valid = array('target' => 'Device and volume type targets cannot be mixed');
+          
+      // validate collectd rrd options
+      if (isset($options['collectd_rrd'])) {
+        if (!ch_check_sudo()) $valid['collectd_rrd'] = 'sudo privilege is required to use this option';
+        else if (!is_dir($options['collectd_rrd_dir'])) $valid['collectd_rrd_dir'] = sprintf('The directory %s does not exist', $options['collectd_rrd_dir']);
+        else if ((shell_exec('ps aux | grep collectd | wc -l')*1 < 2)) $valid['collectd_rrd'] = 'collectd is not running';
+        else if ((shell_exec(sprintf('find %s -maxdepth 1 -type d 2>/dev/null | wc -l', $options['collectd_rrd_dir']))*1 < 2)) $valid['collectd_rrd_dir'] = sprintf('The directory %s is empty', $options['collectd_rrd_dir']);
+      }
     }
+    
     return $valid;
   }
   
@@ -1703,3 +1768,4 @@ abstract class BlockStorageTest {
   
 }
 ?>
+

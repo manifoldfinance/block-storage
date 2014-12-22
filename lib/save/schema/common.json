@@ -1,6 +1,7 @@
 [
   {"name": "active_range", "type": "tinyint unsigned"},
   {"name": "benchmark_version", "type": "char(8)"},
+  {"name": "collectd_rrd", "type": "char(255)"},
   {"name": "fio_version", "type": "char(8)"},
   {"name": "iteration", "type": "tinyint unsigned"},
   {"name": "meta_compute_service", "type": "char(32)"},
@@ -63,6 +64,7 @@
   {"name": "threads", "type": "tinyint unsigned"},
   {"name": "threads_total", "type": "tinyint unsigned"},
   {"name": "timeout", "type": "int"},
+  {"name": "wd_sleep_between", "type": "char(64)"},
   {"name": "wd_test_duration", "type": "smallint unsigned"},
   {"name": "compute_service_idx", "type": "index", "cols": ["meta_compute_service_id", "meta_instance_id", "meta_storage_config", "meta_region"]},
   {"name": "provider_idx", "type": "index", "cols": ["meta_provider_id", "meta_compute_service_id", "meta_instance_id"]},

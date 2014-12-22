@@ -59,6 +59,7 @@ foreach($options['test'] as $test) {
     else print_msg(sprintf('Target purge successful - continuing testing'), $verbose, __FILE__, __LINE__);
     
     // workload independent pre-conditioning
+    $controller->start();
     if (isset($options['noprecondition']) && $options['noprecondition']) print_msg(sprintf('Workload independent precondition skipped due to use of --noprecondition'), $verbose, __FILE__, __LINE__);
     else if (!$controller->wipc()) {
       $exitCode = 1;
@@ -76,6 +77,7 @@ foreach($options['test'] as $test) {
       $controllers[$test] =& $controller;
     }
     else print_msg(sprintf('Workload dependent preconditioning for test %s failed', strtoupper($test)), $verbose, __FILE__, __LINE__, TRUE);
+    $controller->stop();
   }
   else print_msg(sprintf('Unable to get %s test controller', $test), $verbose, __FILE__, __LINE__, TRUE);
 }

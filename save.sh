@@ -128,6 +128,8 @@ line delimited config file located in ~/.ch_benchmark (e.g. db_host=localhost)
 
 --nostore_pdf               Do not store PDF files artifacts
 
+--nostore_rrd               Do not store collectd RRD files
+
 --nostore_zip               Do not store ZIP files artifacts
 
 --output                    The output directory to use for writing CSV files.
