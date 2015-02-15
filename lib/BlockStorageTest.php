@@ -273,6 +273,11 @@ abstract class BlockStorageTest {
           }
         }
       }
+      // use random map?
+      if (!isset($this->options['randommap']) && isset($options['rw']) && preg_match('/rand/', $options['rw'])) {
+        $options['norandommap'] = FALSE;
+        $options['randrepeat'] = 0;
+      }
       foreach($options as $opt => $val) $cmd .= sprintf(' --%s%s', $opt, $val !== FALSE && $val !== NULL ? '=' . $val : '');
       print_msg(sprintf('Starting fio using command: %s', $cmd), $this->verbose, __FILE__, __LINE__);
       $start = time();
@@ -1218,6 +1223,7 @@ abstract class BlockStorageTest {
       'oio_per_thread:',
       'output:',
       'precondition_passes:',
+      'randommap',
       'savefio',      
       'secureerase_pswd:',
       'skip_blocksize:',

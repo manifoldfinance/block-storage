@@ -209,6 +209,15 @@ variables (e.g. `export bm_param_test=iops`)
                             Use of random data for IO is a requirement of the 
                             SNIA test specification
                             
+* randommap                 Random maps are allocated at init time to track 
+                            written to blocks and duplicate block writes. When 
+                            used, random maps must be allocated in memory at 
+                            init time. The memory allocation for these can be 
+                            problematic for large test volume (e.g. 16TB volume
+                             = 4.2GB memory). If this option is not set, random
+                            fio tests will be executed using the --norandommap
+                            and --randrepeat=0 fio options
+                            
 * noreport                  Don't generate html or PDF test reports - 
                             report.zip and report.pdf (gnuplot, wkhtmltopdf and
                             zip dependencies removed if specified)

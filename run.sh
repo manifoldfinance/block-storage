@@ -217,6 +217,15 @@ ARGUMENTS:
                             For latency tests, this parameter is a fixed value
                             of 1. Default value for this parameter is 64
                             
+--randommap                 Random maps are allocated at init time to track 
+                            written to blocks and duplicate block writes. When 
+                            used, random maps must be allocated in memory at 
+                            init time. The memory allocation for these can be 
+                            problematic for large test volume (e.g. 16TB volume
+                             = 4.2GB memory). If this option is not set, random
+                            fio tests will be executed using the --norandommap
+                            and --randrepeat=0 fio options
+                            
 --savefio                   Include results from every fio test job in save 
                             output
 
