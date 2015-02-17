@@ -264,6 +264,9 @@ variables (e.g. `export bm_param_test=iops`)
                             test parameter. If it is not supplied, ATA secure
                             erase will not be attempted. If this parameter is 
                             not specified, the hdparm dependent will be removed
+
+* sequential_only           If set, all random tests will be executed using 
+                            sequential IO instead
                             
 * skip_blocksize            block sizes to skip during testing. This argument 
                             may be repeated. Valid options are:

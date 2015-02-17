@@ -278,6 +278,9 @@ abstract class BlockStorageTest {
         $options['norandommap'] = FALSE;
         $options['randrepeat'] = 0;
       }
+      // use sequential IO only
+      if (isset($this->options['sequential_only']) && isset($options['rw']) && preg_match('/rand/', $options['rw'])) $options['rw'] = str_replace('rand', '', $options['rw']);
+      
       foreach($options as $opt => $val) $cmd .= sprintf(' --%s%s', $opt, $val !== FALSE && $val !== NULL ? '=' . $val : '');
       print_msg(sprintf('Starting fio using command: %s', $cmd), $this->verbose, __FILE__, __LINE__);
       $start = time();
@@ -1226,6 +1229,7 @@ abstract class BlockStorageTest {
       'randommap',
       'savefio',      
       'secureerase_pswd:',
+      'sequential_only',
       'skip_blocksize:',
       'skip_workload:',
       'ss_max_rounds:',
