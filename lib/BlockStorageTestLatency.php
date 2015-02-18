@@ -297,7 +297,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
           if ($read == 100) $params['rw'] = 'randread';
           else if ($write == 100) $params['rw'] = 'randwrite';
           else {
-            $params['rw'] = 'randwrite';
+            $params['rw'] = 'randrw';
             $params['rwmixread'] = $rwmixread;
           }
           if ($fio = $this->fio($params, 'wdpc')) {
