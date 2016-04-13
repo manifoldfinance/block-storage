@@ -97,6 +97,10 @@ ARGUMENTS:
 --meta_drive_type           Optional drive type descriptor to use for report 
                             headers (e.g. SATA, SSD, PCIe)
                             
+--meta_host_cache           Optional host caching designation for the test 
+                            volumes (if applicable). One of the following 
+                            values: read or rw
+                            
 --meta_instance_id          The compute service instance type this test pertains 
                             to (e.g. c3.xlarge). Used for report headers
                             

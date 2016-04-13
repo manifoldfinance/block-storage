@@ -883,6 +883,7 @@ function validate_dependencies($dependencies) {
  *   required: argument is required
  *   url:      argument is a URL
  *   write:    argument is in the file system path and writeable
+ *   writedir: same as write but parent directory should be writable
  * @return array
  */
 function validate_options($options, $validate) {
@@ -912,6 +913,11 @@ function validate_options($options, $validate) {
             break;
           case 'write':
             if ($val && !file_exists($val)) $err = sprintf('%s is not a valid path', $val);
+            else if ($val && !is_writable($val)) $err = sprintf('%s is not writable', $val);
+            break;
+          case 'writedir':
+            $val = is_dir($val) ? $val : dirname($val);
+            if ($val && !is_dir($val)) $err = sprintf('%s is not a valid directory', $val);
             else if ($val && !is_writable($val)) $err = sprintf('%s is not writable', $val);
             break;
           case 'url':

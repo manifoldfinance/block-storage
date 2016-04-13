@@ -960,7 +960,7 @@ abstract class BlockStorageTest {
       $volInfo = $keys[0];
     }
     $params = array(
-      'Storage Config' => $this->options['meta_storage_config'],
+      'Storage Config' => $this->options['meta_storage_config'] . (isset($this->options['meta_host_cache']) ? sprintf(' (%s host cache enabled)', $this->options['meta_host_cache']) : ''),
       "# ${t}s" => count($this->options['target']),
       "${t}s" => implode(', ', count($this->options['target']) > 8 ? array_merge(array_slice($this->options['target'], 0, 4), array('...'), array_slice($this->options['target'], -4)) : $this->options['target']),
       "${t} Capacities" => $capacities,
@@ -1199,6 +1199,7 @@ abstract class BlockStorageTest {
       'meta_drive_interface:',
       'meta_drive_model:',
       'meta_drive_type:',
+      'meta_host_cache:',
       'meta_instance_id:',
       'meta_memory:',
       'meta_os:',
@@ -1321,6 +1322,13 @@ abstract class BlockStorageTest {
       $options['threads_total'] = round($options['threads']*count($options['target']));
       if ($threads != $options['threads']) print_msg(sprintf('Reduced total threads from %d to %d [threads per target from %d to %s] for threads_per_core_max constraint %d, %d CPU cores, and %d targets', $threads_total, $options['threads_total'], $threads, $options['threads'], $options['threads_per_core_max'], BlockStorageTest::getCpuCount(), count($options['target'])), $verbose, __FILE__, __LINE__);
       else print_msg(sprintf('Ignoring threads_per_core_max constraint %d because at least 1 thread per target is required', $options['threads_per_core_max']), $verbose, __FILE__, __LINE__);
+    }
+    
+    // validate meta_host_cache value is read or rw
+    if (isset($options['meta_host_cache'])) $options['meta_host_cache'] = trim(strtolower($options['meta_host_cache']));
+    if (isset($options['meta_host_cache']) && !in_array($options['meta_host_cache'], array('read', 'rw'))) {
+      print_msg(sprintf('Ignoring meta_host_cache %s (allowed values are read or rw)', $options['meta_host_cache']), $verbose, __FILE__, __LINE__);
+      unset($options['meta_host_cache']);
     }
     
     return $options;
