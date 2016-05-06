@@ -1437,18 +1437,23 @@ abstract class BlockStorageTest {
   }
   
   /**
-   * returns TRUE if $target references a rotational device
+   * returns TRUE if $target references a rotational device, FALSE if it is not 
+   * rotational and NULL if the device type cannot be queried
    * @param string $target the device or path to check
    * @return boolean
    */
   public static function isRotational($target) {
-    $rotational = FALSE;
-    if ($device = BlockStorageTest::getDevice($target, TRUE)) {
-      if (file_exists($file = sprintf('/sys/block/%s/queue/rotational', basename($device)))) {
+    $rotational = NULL;
+    
+    foreach(array(TRUE, FALSE) as $removeNumericSuffix) {
+      if (($device = BlockStorageTest::getDevice($target, $removeNumericSuffix)) && 
+          file_exists($file = sprintf('/sys/block/%s/queue/rotational', basename($device)))) {
         $rotational = trim(file_get_contents($file)) == '1';
+        break;
       }
-      else print_msg(sprintf('Unable to check if %s is rotational because file %s does not exist', $device, $file), TRUE, __FILE__, __LINE__);
     }
+    if ($rotational === NULL) print_msg(sprintf('Unable to check if %s is rotational because file %s does not exist', $device, $file), TRUE, __FILE__, __LINE__);
+    
     return $rotational;
   }
   
