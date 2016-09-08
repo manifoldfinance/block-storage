@@ -97,6 +97,9 @@ ARGUMENTS:
 --meta_drive_type           Optional drive type descriptor to use for report 
                             headers (e.g. SATA, SSD, PCIe)
                             
+--meta_encryption           Optional flag designating if the test volume had
+                            encryption enabled
+                            
 --meta_host_cache           Optional host caching designation for the test 
                             volumes (if applicable). One of the following 
                             values: read or rw

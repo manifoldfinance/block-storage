@@ -123,6 +123,9 @@ variables (e.g. `export bm_param_test=iops`)
 * meta_drive_type           Optional drive type descriptor to use for report 
                             headers (e.g. SATA, SSD, PCIe)
                             
+* meta_encryption           Optional flag designating if the test volume had
+                            encryption enabled
+                            
 * meta_host_cache           Optional host caching designation for the test 
                             volumes (if applicable). One of the following 
                             values: read or rw
@@ -504,6 +507,7 @@ meta_cpu_speed: [CPU clock speed (MHz)]
 meta_drive_interface
 meta_drive_model
 meta_drive_type
+meta_encryption
 meta_host_cache
 meta_instance_id*
 meta_hostname: [system under test (SUT) hostname]
