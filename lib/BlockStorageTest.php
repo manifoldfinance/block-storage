@@ -724,7 +724,7 @@ abstract class BlockStorageTest {
         print_msg(sprintf('Generated line chart %s successfully', $img), $this->verbose, __FILE__, __LINE__);
         // attempt to convert to PNG using wkhtmltoimage
         if (BlockStorageTest::wkhtmltopdfInstalled()) {
-          $cmd = sprintf('wkhtmltoimage %s %s >/dev/null 2>&1', $img, $png = str_replace('.svg', '.png', $img));
+          $cmd = sprintf('%wkhtmltoimage %s %s >/dev/null 2>&1', isset($this->options['wkhtml_xvfb']) ? 'xvfb-run ' : '', $img, $png = str_replace('.svg', '.png', $img));
           $ecode = trim(exec($cmd));
           if ($ecode > 0 || !file_exists($png) || !filesize($png)) print_msg(sprintf('Unable to convert SVG image %s to PNG %s (exit code %d)', $img, $png, $ecode), $this->verbose, __FILE__, __LINE__, TRUE);
           else {
@@ -870,7 +870,7 @@ abstract class BlockStorageTest {
         exec(sprintf('cd %s; zip %s *; mv %s %s', $tdir, basename($zip), basename($zip), $dir));
         if (!isset($options['nopdfreport']) || !$options['nopdfreport']) {
           // generate PDF report
-          $cmd = sprintf('cd %s; wkhtmltopdf -s Letter --footer-left [date] --footer-right [page] --footer-font-name rfont --footer-font-size %d index.html report.pdf >/dev/null 2>&1; echo $?', $tdir, $options['font_size']);
+          $cmd = sprintf('cd %s; %swkhtmltopdf -s Letter --footer-left [date] --footer-right [page] --footer-font-name rfont --footer-font-size %d index.html report.pdf >/dev/null 2>&1; echo $?', $tdir, isset($this->options['wkhtml_xvfb']) ? 'xvfb-run ' : '', $options['font_size']);
           $ecode = trim(exec($cmd));
           if ($ecode > 0) print_msg(sprintf('Failed to create PDF report'), $verbose, __FILE__, __LINE__, TRUE);
           else {
@@ -1246,7 +1246,8 @@ abstract class BlockStorageTest {
       'trim_offset_end:',
       'v' => 'verbose',
       'wd_test_duration:',
-      'wd_sleep_between:'
+      'wd_sleep_between:',
+      'wkhtml_xvfb'
     );
     $options = parse_args($opts, array('skip_blocksize', 'skip_workload', 'target', 'test'));
     $verbose = isset($options['verbose']) && $options['verbose'];
@@ -1646,6 +1647,8 @@ abstract class BlockStorageTest {
    *               supported). Not required if test targets are rotational
    *   wkhtmltopdf Generates PDF version of report - download from 
    *               http://wkhtmltopdf.org
+   *   xvfb-run    Allows wkhtmltopdf to be run in headless mode (required if 
+   *               --nopdfreport is not set and --wkhtml_xvfb is set)
    *   zip         Archives HTML test report into a single zip file
    * returns an array containing the missing dependencies (array is empty if 
    * all dependencies are valid)
@@ -1658,7 +1661,10 @@ abstract class BlockStorageTest {
     if (!isset($options['noreport']) || !$options['noreport']) {
       $dependencies['gnuplot'] = 'gnuplot';
       $dependencies['zip'] = 'zip';
-      if (!isset($options['nopdfreport']) || !$options['nopdfreport']) $dependencies['wkhtmltopdf'] = 'wkhtmltopdf';
+      if (!isset($options['nopdfreport']) || !$options['nopdfreport']) {
+        $dependencies['wkhtmltopdf'] = 'wkhtmltopdf';
+        if (isset($options['wkhtml_xvfb'])) $dependencies['xvfb-run'] = 'xvfb';
+      }
     }
     // ATA secure erase requires hdparm
     if ((!isset($options['nosecureerase']) || !$options['nosecureerase']) && isset($options['secureerase_pswd'])) $dependencies['hdparm'] = 'hdparm';

@@ -385,6 +385,11 @@ ARGUMENTS:
                             iterations in seconds. Default is 60 per the SNIA 
                             test specification
                             
+--wkhtml_xvfb               If set, wkhtmlto* commands will be prefixed with 
+                            xvfb-run (which is added as a dependency). This is
+                            useful when the wkhtml installation does not 
+                            support running in headless mode
+                            
                             
 TEST ARTIFACTS
 Upon successful completion of testing, the following artifacts will be 

@@ -433,6 +433,11 @@ variables (e.g. `export bm_param_test=iops`)
                             --wd_sleep_between "{duration}*({size} >= 1000 ? 0 : ({size} >= 750 ? 0.33 : ({size} >= 500 ? 1 : ({size} >= 250 ? 3 : ({size} >= 100 ? 9 : 100)))))"
                             A shortcut to this formula is --wd_sleep_between ebs
                             
+* wkhtml_xvfb               If set, wkhtmlto* commands will be prefixed with 
+                            xvfb-run (which is added as a dependency). This is
+                            useful when the wkhtml installation does not 
+                            support running in headless mode
+                            
 DEPENDENCIES
 This benchmark suite uses the following packages:
 
@@ -445,6 +450,8 @@ This benchmark suite uses the following packages:
               supported). Not required if test targets are rotational
   wkhtmltopdf Generates PDF version of report - download from 
               http://wkhtmltopdf.org
+  xvfb-run    Allows wkhtmltopdf to be run in headless mode (required if 
+              --nopdfreport is not set and --wkhtml_xvfb is set)
   zip         Archives HTML test report into a single zip file
 
 
