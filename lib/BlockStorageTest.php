@@ -724,7 +724,7 @@ abstract class BlockStorageTest {
         print_msg(sprintf('Generated line chart %s successfully', $img), $this->verbose, __FILE__, __LINE__);
         // attempt to convert to PNG using wkhtmltoimage
         if (BlockStorageTest::wkhtmltopdfInstalled()) {
-          $cmd = sprintf('%skhtmltoimage %s %s >/dev/null 2>&1', isset($this->options['wkhtml_xvfb']) ? 'xvfb-run ' : '', $img, $png = str_replace('.svg', '.png', $img));
+          $cmd = sprintf('%swkhtmltoimage %s %s >/dev/null 2>&1', isset($this->options['wkhtml_xvfb']) ? 'xvfb-run ' : '', $img, $png = str_replace('.svg', '.png', $img));
           $ecode = trim(exec($cmd));
           sleep(1);
           if (!file_exists($png) || !filesize($png)) print_msg(sprintf('Unable to convert SVG image %s to PNG %s (exit code %d)', $img, $png, $ecode), $this->verbose, __FILE__, __LINE__, TRUE);
@@ -873,6 +873,7 @@ abstract class BlockStorageTest {
           // generate PDF report
           $cmd = sprintf('cd %s; %swkhtmltopdf -s Letter --footer-left [date] --footer-right [page] --footer-font-name rfont --footer-font-size %d index.html report.pdf >/dev/null 2>&1; echo $?', $tdir, isset($this->options['wkhtml_xvfb']) ? 'xvfb-run ' : '', $options['font_size']);
           $ecode = trim(exec($cmd));
+          sleep(1);
           if ($ecode > 0) print_msg(sprintf('Failed to create PDF report'), $verbose, __FILE__, __LINE__, TRUE);
           else {
             print_msg(sprintf('Successfully created PDF report'), $verbose, __FILE__, __LINE__);
