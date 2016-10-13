@@ -475,7 +475,7 @@ function get_percentile($values, $percentile, $lowerIsBetter=FALSE) {
 function get_prefixed_params($prefix) {
   $params = array();
 	foreach(string_to_hash(shell_exec('env')) as $key => $val) {
-		if (preg_match('/^bm_param_' . $prefix . '(.*)$/', $key, $m)) $params[$m[1]] = trim($val) ? trim($val) : TRUE;
+		if (preg_match('/^bm_param_' . $prefix . '(.*)$/', $key, $m)) $params[$m[1]] = strlen(trim($val)) ? trim($val) : TRUE;
 	}
   foreach($_SERVER['argv'] as $arg) {
     if (preg_match('/^\-\-' . $prefix . '(.*)$/', $arg, $m)) {
