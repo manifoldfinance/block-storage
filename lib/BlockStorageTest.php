@@ -962,7 +962,7 @@ abstract class BlockStorageTest {
       $volInfo = $keys[0];
     }
     $params = array(
-      'Storage Config' => $this->options['meta_storage_config'] . (isset($this->options['meta_host_cache']) ? sprintf(' (%s host cache enabled)', $this->options['meta_host_cache']) : '') . (isset($this->options['meta_encryption']) ? ' (w/encryption)' : '' . (isset($this->options['meta_burst']) ? ' (w/burst)' : ''),
+      'Storage Config' => $this->options['meta_storage_config'] . (isset($this->options['meta_host_cache']) ? sprintf(' (%s host cache enabled)', $this->options['meta_host_cache']) : '') . (isset($this->options['meta_encryption']) ? ' (w/encryption)' : '') . (isset($this->options['meta_burst']) ? ' (w/burst)' : '') . (isset($this->options['meta_piops']) ? ' (' . $this->options['meta_piops'] . ' PIOPS)' : ''),
       "# ${t}s" => count($this->options['target']),
       "${t}s" => implode(', ', count($this->options['target']) > 8 ? array_merge(array_slice($this->options['target'], 0, 4), array('...'), array_slice($this->options['target'], -4)) : $this->options['target']),
       "${t} Capacities" => $capacities,
@@ -1209,6 +1209,7 @@ abstract class BlockStorageTest {
       'meta_os:',
       'meta_notes_storage:',
       'meta_notes_test:',
+      'meta_piops:',
       'meta_provider:',
       'meta_provider_id:',
       'meta_region:',
@@ -1707,6 +1708,7 @@ abstract class BlockStorageTest {
     $validate = array(
       'active_range' => array('min' => 1, 'max' => 100),
       'font_size' => array('min' => 6, 'max' => 64),
+      'meta_piops' => array('min' => 1),
       'oio_per_thread' => array('min' => 1, 'max' => 256),
       'output' => array('write' => TRUE),
       'precondition_passes' => array('min' => 1, 'max' => 5),

@@ -125,6 +125,9 @@ ARGUMENTS:
 --meta_os                   Operating system descriptor to use for report 
                             headers. If not specified, this meta data will be 
                             derived from the first line of /etc/issue
+
+--meta_piops                Optional argument designating the number of 
+                            provisioned IOPs associated with the test volumes
                             
 --meta_provider             The name of the cloud provider this test pertains
                             to. Used for report headers. May also be specified 
