@@ -75,6 +75,11 @@ ARGUMENTS:
                             this parameter is
                             http://code.jquery.com/jquery-2.1.0.min.js
                             
+--meta_burst                Optional flag designating if the testing was 
+                            performed using within the burst capabilities of 
+                            the test volumes. See --wd_sleep_between for 
+                            details on automating burst testing
+                            
 --meta_compute_service      The name of the compute service this test pertains
                             to. Used for report headers. May also be specified 
                             using the environment variable bm_compute_service

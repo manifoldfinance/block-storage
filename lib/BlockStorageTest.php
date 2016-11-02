@@ -962,7 +962,7 @@ abstract class BlockStorageTest {
       $volInfo = $keys[0];
     }
     $params = array(
-      'Storage Config' => $this->options['meta_storage_config'] . (isset($this->options['meta_host_cache']) ? sprintf(' (%s host cache enabled)', $this->options['meta_host_cache']) : '') . (isset($this->options['meta_encryption']) ? ' (encryption enabled)' : ''),
+      'Storage Config' => $this->options['meta_storage_config'] . (isset($this->options['meta_host_cache']) ? sprintf(' (%s host cache enabled)', $this->options['meta_host_cache']) : '') . (isset($this->options['meta_encryption']) ? ' (w/encryption)' : '' . (isset($this->options['meta_burst']) ? ' (w/burst)' : ''),
       "# ${t}s" => count($this->options['target']),
       "${t}s" => implode(', ', count($this->options['target']) > 8 ? array_merge(array_slice($this->options['target'], 0, 4), array('...'), array_slice($this->options['target'], -4)) : $this->options['target']),
       "${t} Capacities" => $capacities,
@@ -1195,6 +1195,7 @@ abstract class BlockStorageTest {
       'highcharts_js_url:',
       'highcharts3d_js_url:',
       'jquery_url:',
+      'meta_burst',
       'meta_compute_service:',
       'meta_compute_service_id:',
       'meta_cpu:',
