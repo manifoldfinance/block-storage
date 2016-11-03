@@ -159,6 +159,44 @@ abstract class BlockStorageTest {
   }
   
   /**
+   * Invokes df for the $target specified. Returns a hash with the following
+   * keys: 
+   *   source => file system source
+   *   fstype => file system type
+   *   size => size (KB)
+   *   used => used (KB)
+   *   avail => available (KB)
+   *   pcent => percentage used
+   *   target => mount point
+   * @param string $target the path to check
+   * @param array $args optional df command line arguments. A hash containing 
+   * argument name/values. Do not preceed names with - or --. For flags, set 
+   * the value to NULL
+   * @return array
+   */
+  public static function df($target, $args=NULL) {
+    $df = NULL;
+    $cargs = '-T';
+    if (is_array($args)) {
+      foreach($args as $a => $v) $cargs .= sprintf(' -%s%s%s', strlen($a) > 1 ? '-' : '', $v !== NULL ? (strlen($a) > 1 ? '=' : ' ') : '', $v !== NULL ? $v : '');
+    }
+    if (($buffer = trim(shell_exec(sprintf('df %s %s', $cargs, $target)))) && preg_match('/ilesystem/', $buffer)) {
+      $pieces = explode("\n", $buffer);
+      if (preg_match('/^([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s*$/', $pieces[1], $m)) {
+        $df = array();
+        $df['source'] = $m[1];
+        $df['fstype'] = $m[2];
+        $df['size'] = $m[3];
+        $df['used'] = $m[4];
+        $df['avail'] = $m[5];
+        $df['pcent'] = $m[6];
+        $df['target'] = $m[7];
+      }
+    }
+    return $df;
+  }
+  
+  /**
    * removes any skip_blocksize arguments from $blocksizes
    * @param array $blocksizes the blocksizes to filter
    * @return array
@@ -916,7 +954,10 @@ abstract class BlockStorageTest {
     
     if ($target) {
       if (preg_match('/^\/dev\//', $target)) $device = $target;
-      else if (!($device = trim(shell_exec(sprintf('df --output=source %s | sed -e /^Filesystem/d', $target))))) $device = NULL;
+      else {
+        $df = BlockStorageTest::df($target);
+        $device = $df && isset($df['source']) ? $df['source'] : NULL;
+      }
     }
     if ($device && $removeNumericSuffix && preg_match('/[a-z]([0-9]+)$/', $device, $m)) $device = substr($device, 0, strlen($m[1])*-1);
     
@@ -1019,9 +1060,11 @@ abstract class BlockStorageTest {
       }
     }
     else {
-      $freeSpace = substr(trim(shell_exec($cmd = sprintf('df -B M --output=avail %s | sed -e /Avail/d', $target))), 0, -1)*1;
-      if (file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) $freeSpace += round((filesize($file)/1024)/1024);
-      if ($bytes) $freeSpace *= 1048576;
+      $df = BlockStorageTest::df($target, array('B' => 'M'));
+      if (is_numeric($freeSpace = $df && isset($df['avail']) ? substr($df['avail'], 0, -1)*1 : NULL)) {
+        if (file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) $freeSpace += round((filesize($file)/1024)/1024);
+        if ($bytes) $freeSpace *= 1048576; 
+      }
     }
     
     if ($freeSpace) print_msg(sprintf('Target %s has %s MB free space [cmd=%s]', $target, $bytes ? round($freeSpace/1048576) : $freeSpace, $cmd), $verbose, __FILE__, __LINE__);
@@ -1042,7 +1085,8 @@ abstract class BlockStorageTest {
   public static function getFsType($target) {
     $fstype = NULL;
     if ($target) {
-      if (!($fstype = trim(shell_exec(sprintf('df --output=fstype %s | sed -e /^Type/d', $target))))) $fstype = NULL;
+      $df = BlockStorageTest::df($target);
+      $fstype = $df && isset($df['fstype']) ? $df['fstype'] : NULL;
     }
     return $fstype;
   }
@@ -1436,7 +1480,8 @@ abstract class BlockStorageTest {
     if ($target) {
       if (preg_match('/^\/dev\//', $target)) $volume = $target;
       else {
-        if (!($volume = trim(shell_exec(sprintf('df --output=target %s | sed -e /^Mounted/d', $target))))) $volume = NULL;
+        $df = BlockStorageTest::df($target);
+        $volume = $df && isset($df['target']) ? $df['target'] : NULL;
       }
     }
     return $volume;
