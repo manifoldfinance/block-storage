@@ -182,7 +182,7 @@ abstract class BlockStorageTest {
     }
     if (($buffer = trim(shell_exec(sprintf('df %s %s', $cargs, $target)))) && preg_match('/ilesystem/', $buffer)) {
       $pieces = explode("\n", $buffer);
-      if (preg_match('/^([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s*$/', $pieces[1], $m)) {
+      if (preg_match('/^([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)\s*$/', $pieces[1], $m)) {
         $df = array();
         $df['source'] = $m[1];
         $df['fstype'] = $m[2];
@@ -1361,7 +1361,7 @@ abstract class BlockStorageTest {
       print_msg(sprintf('Reduced threads from %d to %d for threads_per_target_max constraint %d', $threads, $options['threads'], $options['threads_per_target_max']), $verbose, __FILE__, __LINE__);
     }
     
-    $options['threads_total'] = $options['threads']*count($options['target']);
+    $options['threads_total'] = isset($options['target']) ? $options['threads']*count($options['target']) : NULL;
     
     // adjust for threads_per_core_max
     if (isset($options['threads_per_core_max']) && $options['threads_total'] > ($options['threads_per_core_max']*BlockStorageTest::getCpuCount())) {
@@ -1503,7 +1503,7 @@ abstract class BlockStorageTest {
         break;
       }
     }
-    if ($rotational === NULL) print_msg(sprintf('Unable to check if %s is rotational because file %s does not exist', isset($device) ? $device : $target, $file), TRUE, __FILE__, __LINE__);
+    if ($rotational === NULL) print_msg(sprintf('Unable to check if %s is rotational because file %s does not exist', isset($device) ? $device : $target, isset($file) ? $file : 'NA'), TRUE, __FILE__, __LINE__);
     
     return $rotational;
   }
