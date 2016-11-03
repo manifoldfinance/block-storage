@@ -178,7 +178,7 @@ abstract class BlockStorageTest {
     $df = NULL;
     $cargs = '-T';
     if (is_array($args)) {
-      foreach($args as $a => $v) $cargs .= sprintf(' -%s%s%s', strlen($a) > 1 ? '-' : '', $v !== NULL ? (strlen($a) > 1 ? '=' : ' ') : '', $v !== NULL ? $v : '');
+      foreach($args as $a => $v) $cargs .= sprintf(' -%s%s%s%s', strlen($a) > 1 ? '-' : '', $a, $v !== NULL ? (strlen($a) > 1 ? '=' : ' ') : '', $v !== NULL ? $v : '');
     }
     if (($buffer = trim(shell_exec(sprintf('df %s %s', $cargs, $target)))) && preg_match('/ilesystem/', $buffer)) {
       $pieces = explode("\n", $buffer);
@@ -1067,10 +1067,10 @@ abstract class BlockStorageTest {
       }
     }
     
-    if ($freeSpace) print_msg(sprintf('Target %s has %s MB free space [cmd=%s]', $target, $bytes ? round($freeSpace/1048576) : $freeSpace, $cmd), $verbose, __FILE__, __LINE__);
+    if ($freeSpace) print_msg(sprintf('Target %s has %s MB free space', $target, $bytes ? round($freeSpace/1048576) : $freeSpace), $verbose, __FILE__, __LINE__);
     else {
       $freeSpace = NULL;
-      print_msg(sprintf('Unable to get free space for target %s using command: %s', $target, $cmd), $verbose, __FILE__, __LINE__, TRUE);
+      print_msg(sprintf('Unable to get free space for target %s', $target), $verbose, __FILE__, __LINE__, TRUE);
     }
     
     return $freeSpace;
@@ -1503,7 +1503,7 @@ abstract class BlockStorageTest {
         break;
       }
     }
-    if ($rotational === NULL) print_msg(sprintf('Unable to check if %s is rotational because file %s does not exist', $device, $file), TRUE, __FILE__, __LINE__);
+    if ($rotational === NULL) print_msg(sprintf('Unable to check if %s is rotational because file %s does not exist', isset($device) ? $device : $target, $file), TRUE, __FILE__, __LINE__);
     
     return $rotational;
   }
