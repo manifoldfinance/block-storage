@@ -229,6 +229,9 @@ ARGUMENTS:
                             preconditioning. Per the SNIA test specification 
                             the default is 2X. Use this or the --noprecondition
                             argument to change this default behavior
+                            
+--purge_once                If set, purge will be performed once only instead 
+                            of prior to each test performed
 
 --oio_per_thread            The outstanding IO per thread (a.k.a. queue depth). 
                             This translates to the fio 'iodepth' parameter. 

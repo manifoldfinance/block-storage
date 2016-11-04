@@ -43,6 +43,7 @@
   {"name": "precondition_once", "type": "boolean"},
   {"name": "precondition_passes", "type": "tinyint unsigned"},
   {"name": "purge_methods", "type": "char(255)"},
+  {"name": "purge_once", "type": "boolean"},
   {"name": "report_pdf", "type": "char(255)"},
   {"name": "report_zip", "type": "char(255)"},
   {"name": "skip_blocksize", "type": "char(64)"},
