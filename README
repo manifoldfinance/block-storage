@@ -214,6 +214,9 @@ variables (e.g. `export bm_param_test=iops`)
                             test specification). This step precedes workload 
                             dependent preconditioning
                             
+* noprecondition_rotational Don't perform preconditioning for rotational 
+                            test targets
+                            
 * nopurge                   Don't require a purge for testing. If this 
                             parameter is not set, and at least 1 target could 
                             not be purged, testing will abort. This parameter
@@ -262,6 +265,9 @@ variables (e.g. `export bm_param_test=iops`)
 * output                    The output directory to use for writing test artifacts 
                             (JSON and reports). If not specified, the current 
                             working directory will be used
+                            
+* precondition_once         If set, preconditioning will be performed once only
+                            instead of prior to each test performed
                             
 * precondition_passes       Number of passes for workload independent 
                             preconditioning. Per the SNIA test specification 
@@ -542,12 +548,14 @@ meta_storage_vol_info
 meta_test_id*
 meta_test_sw
 noprecondition
+noprecondition_rotational
 nopurge
 norandom
 nosecureerase
 notrim
 nozerofill
 oio_per_thread: [queue depth per thread]
+precondition_once
 precondition_passes
 purge_methods: [purge methods used for each device]
 report_pdf: [URL to report PDF file (if --store option used)]

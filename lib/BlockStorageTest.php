@@ -1267,6 +1267,7 @@ abstract class BlockStorageTest {
       'nojson',
       'nopdfreport',
       'noprecondition',
+      'noprecondition_rotational',
       'nopurge',
       'norandom',
       'noreport',
@@ -1275,6 +1276,7 @@ abstract class BlockStorageTest {
       'nozerofill',
       'oio_per_thread:',
       'output:',
+      'precondition_once',
       'precondition_passes:',
       'randommap',
       'savefio',      
@@ -1804,6 +1806,23 @@ abstract class BlockStorageTest {
    */
   public final function wipc($bs='128k') {
     $noprecondition = $this->skipWipc || (isset($this->options['noprecondition']) && $this->options['noprecondition']);
+    if (!$noprecondition && isset($this->options['precondition_once']) && $this->wipc) {
+      print_msg('Skipping workload independent preconditioning because --precondition_once is set and preconditioning was already performed', $this->verbose, __FILE__, __LINE__);
+      $noprecondition = TRUE;
+    }
+    if (!$noprecondition && isset($this->options['noprecondition_rotational'])) {
+      $rotational = TRUE;
+      foreach($this->options['target'] as $target) {
+        if (!BlockStorageTest::isRotational($target)) {
+          $rotational = FALSE;
+          break;
+        }
+      }
+      if ($rotational) {
+        print_msg('Skipping workload independent preconditioning because --noprecondition_rotational is set and test targets are rotational', $this->verbose, __FILE__, __LINE__);
+        $noprecondition = TRUE;
+      }
+    }
     if (!$noprecondition) {
       print_msg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). This may take a while...', $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
       for($i=1; $i<=$this->options['precondition_passes']; $i++) {

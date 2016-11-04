@@ -187,6 +187,9 @@ ARGUMENTS:
                             workload independent preconditioning (per the SNIA 
                             test specification). This step precedes workload 
                             dependent preconditioning
+                            
+--noprecondition_rotational Don't perform preconditioning for rotational 
+                            test targets
 
 --nopurge                   Don't require a purge for testing. If this 
                             parameter is not set, and at least 1 target could 
@@ -218,6 +221,9 @@ ARGUMENTS:
 --output                    The output directory to use for writing test artifacts 
                             (JSON and reports). If not specified, the current 
                             working directory will be used
+                            
+--precondition_once         If set, preconditioning will be performed once only
+                            instead of prior to each test performed
                             
 --precondition_passes       Number of passes for workload independent 
                             preconditioning. Per the SNIA test specification 
