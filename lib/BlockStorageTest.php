@@ -69,11 +69,6 @@ abstract class BlockStorageTest {
   protected $options = NULL;
   
   /**
-   * set to TRUE after 1 successful purge
-   */
-  protected $purged = FALSE;
-  
-  /**
    * stores purge methods used during testing. indexed by target with values
    * secureerase, trim or zero (if target not present, not purged)
    */
@@ -1594,6 +1589,8 @@ abstract class BlockStorageTest {
    * @return boolean
    */
   public final function purge() {
+    static $_purgePerformed;
+    
     $purgeCount = 0;
     $nopurge = isset($this->options['nopurge']) && $this->options['nopurge'];
     $nopurgeIgnore = isset($this->options['nopurge_ignore']) && $this->options['nopurge_ignore'];
@@ -1602,7 +1599,7 @@ abstract class BlockStorageTest {
     $nozerofill = isset($this->options['nozerofill']) && $this->options['nozerofill'];
     $nozerofillNonRotational = isset($this->options['nozerofill_non_rotational']) && $this->options['nozerofill_non_rotational'];
     $purgeOnce = isset($this->options['purge_once']) && $this->options['purge_once'];
-    if (!$nopurge && $this->purged && $purgeOnce) {
+    if (!$nopurge && $purgeOnce $_purgePerformed) {
       print_msg('Skipping purge because --purge_once was set and targets have already been purged', $this->verbose, __FILE__, __LINE__);
       $purgeCount = count($this->options['target']);
       $nopurge = TRUE;
@@ -1679,7 +1676,7 @@ abstract class BlockStorageTest {
       } 
     }
     if ($purgeCount == count($this->options['target'])) {
-      $this->purged = TRUE;
+      $_purgePerformed = TRUE;
       return TRUE;
     }
     else if ($nopurgeIgnore) {
@@ -1829,6 +1826,8 @@ abstract class BlockStorageTest {
    * @return boolean
    */
   public final function wipc($bs='128k') {
+    static $_wipcPerformed;
+    
     $noprecondition = $this->skipWipc || (isset($this->options['noprecondition']) && $this->options['noprecondition']);
     $nopreconditionRotational = isset($this->options['noprecondition_rotational']) && $this->options['noprecondition_rotational'];
     $preconditionOnce = isset($this->options['precondition_once']) && $this->options['precondition_once'];
@@ -1846,7 +1845,7 @@ abstract class BlockStorageTest {
         $this->skipWipc = TRUE;
       }
     }
-    if (!$noprecondition && $preconditionOnce && $this->wipc) {
+    if (!$noprecondition && $preconditionOnce && $_wipcPerformed) {
       print_msg('Skipping workload independent preconditioning because --precondition_once is set and preconditioning was already performed', $this->verbose, __FILE__, __LINE__);
       $noprecondition = TRUE;
       $this->skipWipc = TRUE;
@@ -1859,6 +1858,7 @@ abstract class BlockStorageTest {
         print_msg(sprintf('Attempting workload independent precondition pass %d of %d', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
         if ($this->fio($opts, 'wipc', NULL, TRUE, TRUE)) {
           $this->wipc = TRUE;
+          $_wipcPerformed = TRUE;
           print_msg(sprintf('Workload independent precondition pass %d of %d successful', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
         }
         else {
