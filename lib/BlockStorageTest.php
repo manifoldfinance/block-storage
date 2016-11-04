@@ -1599,7 +1599,7 @@ abstract class BlockStorageTest {
     $nozerofill = isset($this->options['nozerofill']) && $this->options['nozerofill'];
     $nozerofillNonRotational = isset($this->options['nozerofill_non_rotational']) && $this->options['nozerofill_non_rotational'];
     $purgeOnce = isset($this->options['purge_once']) && $this->options['purge_once'];
-    if (!$nopurge && $purgeOnce $_purgePerformed) {
+    if (!$nopurge && $purgeOnce && $_purgePerformed) {
       print_msg('Skipping purge because --purge_once was set and targets have already been purged', $this->verbose, __FILE__, __LINE__);
       $purgeCount = count($this->options['target']);
       $nopurge = TRUE;
