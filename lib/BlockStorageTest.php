@@ -1274,11 +1274,13 @@ abstract class BlockStorageTest {
       'noprecondition',
       'noprecondition_rotational',
       'nopurge',
+      'nopurge_ignore',
       'norandom',
       'noreport',
       'nosecureerase',
       'notrim',
       'nozerofill',
+      'nozerofill_non_rotational',
       'oio_per_thread:',
       'output:',
       'precondition_once',
@@ -1594,10 +1596,13 @@ abstract class BlockStorageTest {
   public final function purge() {
     $purgeCount = 0;
     $nopurge = isset($this->options['nopurge']) && $this->options['nopurge'];
+    $nopurgeIgnore = isset($this->options['nopurge_ignore']) && $this->options['nopurge_ignore'];
     $nosecureerase = isset($this->options['nosecureerase']) && $this->options['nosecureerase'];
     $notrim = isset($this->options['notrim']) && $this->options['notrim'];
     $nozerofill = isset($this->options['nozerofill']) && $this->options['nozerofill'];
-    if (!$nopurge && $this->purged && isset($this->options['purge_once'])) {
+    $nozerofillNonRotational = isset($this->options['nozerofill_non_rotational']) && $this->options['nozerofill_non_rotational'];
+    $purgeOnce = isset($this->options['purge_once']) && $this->options['purge_once'];
+    if (!$nopurge && $this->purged && $purgeOnce) {
       print_msg('Skipping purge because --purge_once was set and targets have already been purged', $this->verbose, __FILE__, __LINE__);
       $purgeCount = count($this->options['target']);
       $nopurge = TRUE;
@@ -1638,7 +1643,7 @@ abstract class BlockStorageTest {
         else if (!$purged) print_msg(sprintf('TRIM not attempted for target %s because %s', $target, $notrim ? '--notrim argument was specified' : 'device is rotational'), $this->verbose, __FILE__, __LINE__);
         
         // finally try zero filling
-        if (!$purged && !$nozerofill) {
+        if (!$purged && !$nozerofill && (!$nozerofillNonRotational || $rotational)) {
           $size = BlockStorageTest::getFreeSpace($target);
           
           // adjust for active range and volume target free space buffer
@@ -1664,7 +1669,7 @@ abstract class BlockStorageTest {
             } 
           }
         }
-        else if (!$purged) print_msg(sprintf('Zero fill not attempted for target %s because %s', $target, $nozerofill ? '--nozerofill argument was specified' : 'it is not a device'), $this->verbose, __FILE__, __LINE__);
+        else if (!$purged) print_msg(sprintf('Zero fill not attempted for target %s because %s', $target, $nozerofill ? '--nozerofill argument was specified' : ($nozerofillNonRotational && !$rotational ? '--nozerofill_non_rotational argument specified and target is non-rotational' : 'it is not a device')), $this->verbose, __FILE__, __LINE__);
         
         if ($purged) {
           print_msg(sprintf('Target %s purged successfully using %s', $target, $this->purgeMethods[$target]), $this->verbose, __FILE__, __LINE__);
@@ -1675,6 +1680,10 @@ abstract class BlockStorageTest {
     }
     if ($purgeCount == count($this->options['target'])) {
       $this->purged = TRUE;
+      return TRUE;
+    }
+    else if ($nopurgeIgnore) {
+      print_msg('Purge could not be performed, but --nopurge_ignore set - testing will continue', $this->verbose, __FILE__, __LINE__);
       return TRUE;
     }
     else return FALSE;
@@ -1821,12 +1830,9 @@ abstract class BlockStorageTest {
    */
   public final function wipc($bs='128k') {
     $noprecondition = $this->skipWipc || (isset($this->options['noprecondition']) && $this->options['noprecondition']);
-    if (!$noprecondition && isset($this->options['precondition_once']) && $this->wipc) {
-      print_msg('Skipping workload independent preconditioning because --precondition_once is set and preconditioning was already performed', $this->verbose, __FILE__, __LINE__);
-      $noprecondition = TRUE;
-      $this->skipWipc = TRUE;
-    }
-    if (!$noprecondition && isset($this->options['noprecondition_rotational'])) {
+    $nopreconditionRotational = isset($this->options['noprecondition_rotational']) && $this->options['noprecondition_rotational'];
+    $preconditionOnce = isset($this->options['precondition_once']) && $this->options['precondition_once'];
+    if (!$noprecondition && $nopreconditionRotational) {
       $rotational = TRUE;
       foreach($this->options['target'] as $target) {
         if (!BlockStorageTest::isRotational($target)) {
@@ -1839,6 +1845,11 @@ abstract class BlockStorageTest {
         $noprecondition = TRUE;
         $this->skipWipc = TRUE;
       }
+    }
+    if (!$noprecondition && $preconditionOnce && $this->wipc) {
+      print_msg('Skipping workload independent preconditioning because --precondition_once is set and preconditioning was already performed', $this->verbose, __FILE__, __LINE__);
+      $noprecondition = TRUE;
+      $this->skipWipc = TRUE;
     }
     if (!$noprecondition) {
       print_msg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). This may take a while...', $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);

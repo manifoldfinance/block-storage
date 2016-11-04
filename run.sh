@@ -196,6 +196,9 @@ ARGUMENTS:
                             not be purged, testing will abort. This parameter
                             is implicit if --nosecureerase, --notrim and 
                             --nozerofill are all specified
+                            
+--nopurge_ignore            If set, and a device purge could not be performed,
+                            testing will still continue
 
 --norandom                  Don't test using random (less compressible) data.
                             Use of random data for IO is a requirement of the 
@@ -217,6 +220,9 @@ ARGUMENTS:
 --nozerofill                Don't zero fill rotational devices (or SSD devices 
                             when TRIM is not supported) prior to testing 
                             cycles. Zero fill applies only to device targets
+                            
+--nozerofill_non_rotational If set, non-rotational targets will not be zero 
+                            filled
                             
 --output                    The output directory to use for writing test artifacts 
                             (JSON and reports). If not specified, the current 

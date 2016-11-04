@@ -223,6 +223,9 @@ variables (e.g. `export bm_param_test=iops`)
                             is implicit if --nosecureerase, --notrim and 
                             --nozerofill are all specified
                             
+* nopurge_ignore            If set, and a device purge could not be performed,
+                            testing will still continue
+                            
 * norandom                  Don't test using random (less compressible) data.
                             Use of random data for IO is a requirement of the 
                             SNIA test specification
@@ -253,6 +256,8 @@ variables (e.g. `export bm_param_test=iops`)
                             when TRIM is not supported) prior to testing 
                             cycles. Zero fill applies only to device targets
                             
+* nozerofill_non_rotational If set, non-rotational targets will not be zero 
+                            filled
 
 * oio_per_thread            The outstanding IO per thread (a.k.a. queue depth). 
                             This translates to the fio `iodepth` parameter. 
@@ -570,10 +575,12 @@ meta_test_sw
 noprecondition
 noprecondition_rotational
 nopurge
+nopurge_ignore
 norandom
 nosecureerase
 notrim
 nozerofill
+nozerofill_non_rotational
 oio_per_thread: [queue depth per thread]
 precondition_once
 precondition_passes
