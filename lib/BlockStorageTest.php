@@ -1597,9 +1597,10 @@ abstract class BlockStorageTest {
     $nosecureerase = isset($this->options['nosecureerase']) && $this->options['nosecureerase'];
     $notrim = isset($this->options['notrim']) && $this->options['notrim'];
     $nozerofill = isset($this->options['nozerofill']) && $this->options['nozerofill'];
-    if (!$nopurge && isset($this->options['purge_once'])) {
+    if (!$nopurge && $this->purged && isset($this->options['purge_once'])) {
       print_msg('Skipping purge because --purge_once was set and targets have already been purged', $this->verbose, __FILE__, __LINE__);
       $purgeCount = count($this->options['target']);
+      $nopurge = TRUE;
     }
     if (!$nopurge) {
       foreach($this->options['target'] as $target) {
