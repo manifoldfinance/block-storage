@@ -1589,7 +1589,8 @@ abstract class BlockStorageTest {
    * @return boolean
    */
   public final function purge() {
-    static $_purgePerformed;
+    global $_purgePerformed;
+    if (!isset($_purgePerformed)) $_purgePerformed = FALSE;
     
     $purgeCount = 0;
     $nopurge = isset($this->options['nopurge']) && $this->options['nopurge'];
@@ -1826,7 +1827,8 @@ abstract class BlockStorageTest {
    * @return boolean
    */
   public final function wipc($bs='128k') {
-    static $_wipcPerformed;
+    global $_wipcPerformed;
+    if (!isset($_wipcPerformed)) $_wipcPerformed = FALSE;
     
     $noprecondition = $this->skipWipc || (isset($this->options['noprecondition']) && $this->options['noprecondition']);
     $nopreconditionRotational = isset($this->options['noprecondition_rotational']) && $this->options['noprecondition_rotational'];

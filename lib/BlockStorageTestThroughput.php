@@ -62,7 +62,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
    * overrides the parent method in order to write javascript files for 128k 
    * and 1024k workloads separately
    */
-  public function generateJson($dir=NULL) {
+  public function generateJson($dir=NULL, $suffix=NULL) {
     $generated = FALSE;
     if ($this->bs !== NULL) return parent::generateJson($dir, $this->bs);
     else foreach(array_keys($this->subtests) as $bs) $generated = $this->subtests[$bs]->generateJson($dir);
