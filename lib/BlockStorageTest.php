@@ -43,9 +43,19 @@ abstract class BlockStorageTest {
   const BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER = 100;
   
   /**
-   * formula to use for --wd_sleep_between ebs
+   * formula to use for --wd_sleep_between gp2
    */
-  const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_EBS = '{duration}*({size} >= 1000 ? 0 : ({size} >= 750 ? 0.33 : ({size} >= 500 ? 1 : ({size} >= 250 ? 3 : ({size} >= 100 ? 9 : 100)))))';
+  const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_GP2 = '{duration}*({size} >= 1000 ? 0 : ({size} >= 750 ? 0.33 : ({size} >= 500 ? 1 : ({size} >= 250 ? 3 : ({size} >= 214 ? 3.6734 : ({size} >= 100 ? 9 : 29))))))';
+  
+  /**
+   * formula to use for --wd_sleep_between sc1
+   */
+  const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_SC1 = '{duration}*({size} >= 21333 ? 0 : (({size} >= 3200 ? 250 : ({size} >= 3072 ? 240 : ({size} >= 2048 ? 160 : ({size} >= 1024 ? 80 : 40)))) - (({size}/1024)*12))/(({size}/1024)*12))';
+  
+  /**
+   * formula to use for --wd_sleep_between st1
+   */
+  const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_ST1 = '{duration}*({size} >= 12800 ? 0 : (({size} >= 2048 ? 500 : ({size} >= 1024 ? 250 : 125)) - (({size}/1024)*40))/(({size}/1024)*40))';
   
   /**
    * true if targets are devices
@@ -264,7 +274,7 @@ abstract class BlockStorageTest {
       if (!isset($options['iodepth'])) $options['iodepth'] = $this->options['oio_per_thread'];
       if (!isset($options['filename'])) {
         $filename = '';
-        foreach($targets as $target) $filename .= ($filename ? ':' : '') . (BlockStorageTest::getDevice($target) == $target ? $target : $target . '/'. BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME);
+        foreach($targets as $target) $filename .= ($filename ? ':' : '') . (self::getDevice($target) == $target ? $target : $target . '/'. self::BLOCK_STORAGE_TEST_FILE_NAME);
         $options['filename'] = $filename; 
       }
       $options['group_reporting'] = FALSE;
@@ -278,12 +288,12 @@ abstract class BlockStorageTest {
         else {
           $size = NULL;
           foreach($targets as $target) {
-            $free = BlockStorageTest::getFreeSpace($target);
+            $free = self::getFreeSpace($target);
             if ($size === NULL || $free < $size) $size = $free;
           }
           // reduce size according to active range (if < 100%) or free space buffer
           if ($this->options['active_range'] < 100) $size *= ($this->options['active_range'] * 0.01);
-          else if (!$this->deviceTargets) $size -= BlockStorageTest::BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER;
+          else if (!$this->deviceTargets) $size -= self::BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER;
           $size = round($size);
           // not enough free space to continue
           if ($size < 1) {
@@ -305,7 +315,7 @@ abstract class BlockStorageTest {
             // register shutdown method so test files are deleted
             if (!$this->deviceTargets) {
               foreach($targets as $target) {
-                if ($this->volumeTargets && !file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) register_shutdown_function('unlink', $file);
+                if ($this->volumeTargets && !file_exists($file = sprintf('%s/%s', $target, self::BLOCK_STORAGE_TEST_FILE_NAME))) register_shutdown_function('unlink', $file);
               } 
             }
           }
@@ -341,11 +351,11 @@ abstract class BlockStorageTest {
             $volumes = 0;
             $sizes = array();
             foreach($this->options['target'] as $target) {
-              $sizes[] = BlockStorageTest::getFreeSpace($target)/1024;
+              $sizes[] = self::getFreeSpace($target)/1024;
               $volumes++;
             }
             $size = round(array_sum($sizes)/count($sizes));
-            $formula = str_replace(' ', '', $this->options['wd_sleep_between'] == 'ebs' ? BlockStorageTest::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_EBS : $this->options['wd_sleep_between']);
+            $formula = str_replace(' ', '', $this->options['wd_sleep_between'] == 'gp2' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_GP2 : ($this->options['wd_sleep_between'] == 'sc1' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_SC1 : ($this->options['wd_sleep_between'] == 'st1' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_ST1 : $this->options['wd_sleep_between'])));
             $formula = str_replace('{duration}', $duration, $formula);
             $formula = str_replace('{size}', $size, $formula);
             $formula = str_replace('{volumes}', $volumes, $formula);
@@ -476,7 +486,7 @@ abstract class BlockStorageTest {
     $this->options['purge_methods'] = $purgeMethods;
     // add fio version
     if (preg_match('/([0-9][0-9\.]+[0-9])/', trim(shell_exec('fio --version')), $m)) $this->options['fio_version'] = $m[1];
-    $ofile = sprintf('%s/%s', $dir, BlockStorageTest::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME);
+    $ofile = sprintf('%s/%s', $dir, self::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME);
     if (is_dir($dir) && is_writable($dir)) {
       $fp = fopen($ofile, 'w');
       fwrite($fp, serialize($this->options));
@@ -692,8 +702,8 @@ abstract class BlockStorageTest {
       fwrite($fp, "set format x \"%'10.${xFloatPrec}f\"\n");
       if ($xlabel) fwrite($fp, sprintf("set xlabel \"%s\"\n", $xlabel));
       if (isset($settings['xLogscale'])) {
-        if (!isset($settings['xMin'])) $xMin = BlockStorageTest::adjustLogScale($xMin, TRUE);
-        if (!isset($settings['xMax'])) $xMax = BlockStorageTest::adjustLogScale($xMax);
+        if (!isset($settings['xMin'])) $xMin = self::adjustLogScale($xMin, TRUE);
+        if (!isset($settings['xMax'])) $xMax = self::adjustLogScale($xMax);
       }
       if ($xMin != $xMax) fwrite($fp, sprintf("set xrange [%d:%d]\n", $xMin, $xMax));
       if (isset($settings['xLogscale'])) fwrite($fp, "set logscale x\n");
@@ -701,8 +711,8 @@ abstract class BlockStorageTest {
       if ($ylabel) fwrite($fp, sprintf("set ylabel \"%s\"\n", $ylabel));
       if (isset($yMin)) {
         if (isset($settings['yLogscale'])) {
-          if (!isset($settings['yMin'])) $yMin = BlockStorageTest::adjustLogScale($yMin, TRUE);
-          if (!isset($settings['yMax'])) $yMax = BlockStorageTest::adjustLogScale($yMax);
+          if (!isset($settings['yMin'])) $yMin = self::adjustLogScale($yMin, TRUE);
+          if (!isset($settings['yMax'])) $yMax = self::adjustLogScale($yMax);
         }
         if ($yMin != $yMax) fwrite($fp, sprintf("set yrange [%d:%d]\n", $yMin, $yMax));
         if (isset($settings['yLogscale'])) fwrite($fp, "set logscale y\n");
@@ -761,7 +771,7 @@ abstract class BlockStorageTest {
       else {
         print_msg(sprintf('Generated line chart %s successfully', $img), $this->verbose, __FILE__, __LINE__);
         // attempt to convert to PNG using wkhtmltoimage
-        if (BlockStorageTest::wkhtmltopdfInstalled()) {
+        if (self::wkhtmltopdfInstalled()) {
           $cmd = sprintf('%swkhtmltoimage %s %s >/dev/null 2>&1', isset($this->options['wkhtml_xvfb']) ? 'xvfb-run ' : '', $img, $png = str_replace('.svg', '.png', $img));
           $ecode = trim(exec($cmd));
           sleep(1);
@@ -955,7 +965,7 @@ abstract class BlockStorageTest {
     if ($target) {
       if (preg_match('/^\/dev\//', $target)) $device = $target;
       else {
-        $df = BlockStorageTest::df($target);
+        $df = self::df($target);
         $device = $df && isset($df['source']) ? $df['source'] : NULL;
       }
     }
@@ -976,11 +986,11 @@ abstract class BlockStorageTest {
     $volInfo = isset($this->options['meta_storage_vol_info']) ? $this->options['meta_storage_vol_info'] : '';
     $attrs = array('capacity' => array(), 'purge' => array(), 'vol' => array());
     foreach($this->options['target'] as $target) {
-      $capacity = BlockStorageTest::getFreeSpace($target);
+      $capacity = self::getFreeSpace($target);
       $capacity = sprintf('%s %sB', $capacity >= 1024 ? round($capacity/1024, 2) : $capacity, $capacity >= 1024 ? 'G' : 'M');
       $attrs['capacity'][$capacity] = TRUE;
       $capacities .= sprintf('%s%s', $capacities ? ', ' : '', $capacity);
-      $pmethod = isset($this->purgeMethods[$target]) ? BlockStorageTest::getPurgeMethodDesc($this->purgeMethods[$target]) : 'None';
+      $pmethod = isset($this->purgeMethods[$target]) ? self::getPurgeMethodDesc($this->purgeMethods[$target]) : 'None';
       $attrs['purge'][$pmethod] = TRUE;
       $purge .= ($purge ? ', ' : '') . $pmethod;
       if ($this->volumeTargets && !isset($this->options['meta_storage_vol_info'])) {
@@ -1034,7 +1044,7 @@ abstract class BlockStorageTest {
         $key = str_replace('.', '_', str_replace('0000', '', str_replace('00000', '', str_replace('.000000', '', str_replace('<', 'lt', str_replace('<=', 'lte', str_replace('>', 'gt', str_replace('>=', 'gte', $key))))))));
         if (preg_match('/0_00/', $key)) continue;
         
-        if (is_array($val)) $row = array_merge($row, BlockStorageTest::getFioJobRow($val, str_replace('__', '_', sprintf('%s%s_', $prefix ? $prefix . '_' : '', $key))));
+        if (is_array($val)) $row = array_merge($row, self::getFioJobRow($val, str_replace('__', '_', sprintf('%s%s_', $prefix ? $prefix . '_' : '', $key))));
         else $row[sprintf('%s%s', $prefix ? $prefix : '', $key)] = $val;
       }
     }
@@ -1050,7 +1060,7 @@ abstract class BlockStorageTest {
    * @return int
    */
   public static function getFreeSpace($target, $bytes=FALSE, $verbose=FALSE) {
-    $device = BlockStorageTest::getDevice($target);
+    $device = self::getDevice($target);
     
     if ($device == $target) {
       $pieces = explode("\n", trim(shell_exec($cmd = sprintf('lsblk -n -o size -b %s', $target))));
@@ -1060,9 +1070,9 @@ abstract class BlockStorageTest {
       }
     }
     else {
-      $df = BlockStorageTest::df($target, array('B' => 'M'));
+      $df = self::df($target, array('B' => 'M'));
       if (is_numeric($freeSpace = $df && isset($df['avail']) ? substr($df['avail'], 0, -1)*1 : NULL)) {
-        if (file_exists($file = sprintf('%s/%s', $target, BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME))) $freeSpace += round((filesize($file)/1024)/1024);
+        if (file_exists($file = sprintf('%s/%s', $target, self::BLOCK_STORAGE_TEST_FILE_NAME))) $freeSpace += round((filesize($file)/1024)/1024);
         if ($bytes) $freeSpace *= 1048576; 
       }
     }
@@ -1085,7 +1095,7 @@ abstract class BlockStorageTest {
   public static function getFsType($target) {
     $fstype = NULL;
     if ($target) {
-      $df = BlockStorageTest::df($target);
+      $df = self::df($target);
       $fstype = $df && isset($df['fstype']) ? $df['fstype'] : NULL;
     }
     return $fstype;
@@ -1111,10 +1121,10 @@ abstract class BlockStorageTest {
    * @return array
    */
   public static function getMetaCols($dir) {
-    if ($cols = BlockStorageTest::getSerializedOptions($dir)) {
+    if ($cols = self::getSerializedOptions($dir)) {
       if (isset($cols['target'])) {
         $sizes = array();
-        foreach($cols['target'] as $target) $sizes[$target] = round(BlockStorageTest::getFreeSpace($target)/1024);
+        foreach($cols['target'] as $target) $sizes[$target] = round(self::getFreeSpace($target)/1024);
         $cols['target_count'] = count($cols['target']);
         $cols['target_size_gb'] = round(array_sum($sizes)/count($sizes));
         $cols['target_sizes'] = $sizes;
@@ -1332,7 +1342,7 @@ abstract class BlockStorageTest {
     if (isset($options['nosecureerase']) && $options['nosecureerase'] && isset($options['notrim']) && $options['notrim'] && isset($options['nozerofill']) && $options['nozerofill']) $options['nopurge'] = TRUE;
     // threads is based on number of CPUs
     if (isset($options['threads']) && preg_match('/{cpus}/', $options['threads'])) {
-      $options['threads'] = str_replace(' ', '', str_replace('{cpus}', BlockStorageTest::getCpuCount(), $options['threads']));
+      $options['threads'] = str_replace(' ', '', str_replace('{cpus}', self::getCpuCount(), $options['threads']));
       // expression
       if (preg_match('/[\*\+\-\/]/', $options['threads'])) {
         eval(sprintf('$options["threads"]=%s;', $options['threads']));
@@ -1369,13 +1379,13 @@ abstract class BlockStorageTest {
     $options['threads_total'] = isset($options['target']) ? $options['threads']*count($options['target']) : NULL;
     
     // adjust for threads_per_core_max
-    if (isset($options['threads_per_core_max']) && $options['threads_total'] > ($options['threads_per_core_max']*BlockStorageTest::getCpuCount())) {
+    if (isset($options['threads_per_core_max']) && $options['threads_total'] > ($options['threads_per_core_max']*self::getCpuCount())) {
       $threads_total = $options['threads_total'];
       $threads = $options['threads'];
-      $options['threads'] = round(($options['threads_per_core_max']*BlockStorageTest::getCpuCount())/count($options['target']));
+      $options['threads'] = round(($options['threads_per_core_max']*self::getCpuCount())/count($options['target']));
       if (!$options['threads']) $options['threads'] = 1;
       $options['threads_total'] = round($options['threads']*count($options['target']));
-      if ($threads != $options['threads']) print_msg(sprintf('Reduced total threads from %d to %d [threads per target from %d to %s] for threads_per_core_max constraint %d, %d CPU cores, and %d targets', $threads_total, $options['threads_total'], $threads, $options['threads'], $options['threads_per_core_max'], BlockStorageTest::getCpuCount(), count($options['target'])), $verbose, __FILE__, __LINE__);
+      if ($threads != $options['threads']) print_msg(sprintf('Reduced total threads from %d to %d [threads per target from %d to %s] for threads_per_core_max constraint %d, %d CPU cores, and %d targets', $threads_total, $options['threads_total'], $threads, $options['threads'], $options['threads_per_core_max'], self::getCpuCount(), count($options['target'])), $verbose, __FILE__, __LINE__);
       else print_msg(sprintf('Ignoring threads_per_core_max constraint %d because at least 1 thread per target is required', $options['threads_per_core_max']), $verbose, __FILE__, __LINE__);
     }
     
@@ -1396,7 +1406,7 @@ abstract class BlockStorageTest {
    * @return array
    */
   public static function getSerializedOptions($dir) {
-    return unserialize(file_get_contents(sprintf('%s/%s', $dir, BlockStorageTest::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME)));
+    return unserialize(file_get_contents(sprintf('%s/%s', $dir, self::BLOCK_STORAGE_TEST_OPTIONS_FILE_NAME)));
   }
   
   /**
@@ -1457,7 +1467,7 @@ abstract class BlockStorageTest {
         $controller->options = $options;
         // determine target types (device or volume)
         foreach($options['target'] as $target) {
-          $device = BlockStorageTest::getDevice($target);
+          $device = self::getDevice($target);
           $device == $target ? $controller->deviceTargets = TRUE : $controller->volumeTargets = TRUE;
         }
         $controller->verbose = isset($options['verbose']) && $options['verbose'];
@@ -1485,7 +1495,7 @@ abstract class BlockStorageTest {
     if ($target) {
       if (preg_match('/^\/dev\//', $target)) $volume = $target;
       else {
-        $df = BlockStorageTest::df($target);
+        $df = self::df($target);
         $volume = $df && isset($df['target']) ? $df['target'] : NULL;
       }
     }
@@ -1502,7 +1512,7 @@ abstract class BlockStorageTest {
     $rotational = NULL;
     
     foreach(array(TRUE, FALSE) as $removeNumericSuffix) {
-      if (($device = BlockStorageTest::getDevice($target, $removeNumericSuffix)) && 
+      if (($device = self::getDevice($target, $removeNumericSuffix)) && 
           file_exists($file = sprintf('/sys/block/%s/queue/rotational', basename($device)))) {
         $rotational = trim(file_get_contents($file)) == '1';
         break;
@@ -1608,8 +1618,8 @@ abstract class BlockStorageTest {
     if (!$nopurge) {
       foreach($this->options['target'] as $target) {
         $purged = FALSE;
-        $volume = BlockStorageTest::getVolume($target);
-        $rotational = BlockStorageTest::isRotational($target);
+        $volume = self::getVolume($target);
+        $rotational = self::isRotational($target);
         print_msg(sprintf('Attempting to purge %srotational target %s with --nosecureerase=%d; --notrim=%d; --nozerofill=%d', $rotational ? '' : 'non-', $target, $nosecureerase ? '1' : '0', $notrim ? '1' : '0', $nozerofill ? '1' : '0'), $this->verbose, __FILE__, __LINE__);
         // try ATA secure erase
         if ($this->deviceTargets && !$nosecureerase) {
@@ -1628,7 +1638,7 @@ abstract class BlockStorageTest {
         // next try TRIM
         // if (!$purged && !$rotational && !$notrim) {
         if (!$purged && !$notrim) {
-          $cmd = sprintf(($this->deviceTargets ? 'blkdiscard' : 'fstrim') . '%s %s >/dev/null 2>&1; echo $?', $this->deviceTargets && isset($this->options['trim_offset_end']) && $this->options['trim_offset_end'] > 0 ? sprintf(' -o 0 -l %d', BlockStorageTest::getFreeSpace($target, TRUE) - $this->options['trim_offset_end']) : '', $this->deviceTargets ? $target : $volume);
+          $cmd = sprintf(($this->deviceTargets ? 'blkdiscard' : 'fstrim') . '%s %s >/dev/null 2>&1; echo $?', $this->deviceTargets && isset($this->options['trim_offset_end']) && $this->options['trim_offset_end'] > 0 ? sprintf(' -o 0 -l %d', self::getFreeSpace($target, TRUE) - $this->options['trim_offset_end']) : '', $this->deviceTargets ? $target : $volume);
           print_msg(sprintf('Attempting TRIM for volume %s using command %s', $volume, $cmd), $this->verbose, __FILE__, __LINE__);
           $ecode = trim(exec($cmd));
           if ($ecode > 0) print_msg(sprintf('TRIM not supported or failed for target %s (exit code %d)', $target, $ecode), $this->verbose, __FILE__, __LINE__);
@@ -1642,17 +1652,17 @@ abstract class BlockStorageTest {
         
         // finally try zero filling
         if (!$purged && !$nozerofill && (!$nozerofillNonRotational || $rotational)) {
-          $size = BlockStorageTest::getFreeSpace($target);
+          $size = self::getFreeSpace($target);
           
           // adjust for active range and volume target free space buffer
           if ($this->options['active_range'] < 100) $size *= ($this->options['active_range'] * 0.01);
-          else if ($this->volumeTargets) $size -= BlockStorageTest::BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER;
+          else if ($this->volumeTargets) $size -= self::BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER;
           $size = round($size);
           
-          if ($size < 1) print_msg(sprintf('Target %s does not have sufficient space (%d MB) to accomodate free space buffer (%d MB)', $target, $size + BlockStorageTest::BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER, BlockStorageTest::BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER), $this->verbose, __FILE__, __LINE__, TRUE);
+          if ($size < 1) print_msg(sprintf('Target %s does not have sufficient space (%d MB) to accomodate free space buffer (%d MB)', $target, $size + self::BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER, self::BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER), $this->verbose, __FILE__, __LINE__, TRUE);
           else {
             print_msg(sprintf('Attempting to zero fill target %s with %d MB. This may take a while...', $target, $size), $this->verbose, __FILE__, __LINE__);
-            $cmd = sprintf('dd if=/dev/zero of=%s bs=1M count=%d >/dev/null 2>&1; echo $?', $file = $target . ($this->volumeTargets ? '/'. BlockStorageTest::BLOCK_STORAGE_TEST_FILE_NAME : ''), $size);
+            $cmd = sprintf('dd if=/dev/zero of=%s bs=1M count=%d >/dev/null 2>&1; echo $?', $file = $target . ($this->volumeTargets ? '/'. self::BLOCK_STORAGE_TEST_FILE_NAME : ''), $size);
             $ecode = trim(exec($cmd));
             // delete zero file from volume type targets
             if ($this->volumeTargets) {
@@ -1725,7 +1735,7 @@ abstract class BlockStorageTest {
    *   zip         Archives HTML test report into a single zip file
    * returns an array containing the missing dependencies (array is empty if 
    * all dependencies are valid)
-   * @param array $options the run options (see BlockStorageTest::getRunOptions)
+   * @param array $options the run options (see self::getRunOptions)
    * @return array
    */
   public static function validateDependencies($options) {
@@ -1745,7 +1755,7 @@ abstract class BlockStorageTest {
     if (!isset($options['notrim']) || !$options['notrim']) {
       $nonrotational = FALSE;
       foreach($options['target'] as $target) {
-        if (!BlockStorageTest::isRotational($target)) {
+        if (!self::isRotational($target)) {
           $nonrotational = TRUE;
           break;
         }
@@ -1758,7 +1768,7 @@ abstract class BlockStorageTest {
   /**
    * validates fio version and settings. Returns TRUE if it is valid, FALSE 
    * otherwise
-   * @param array $options the run options (see BlockStorageTest::getRunOptions)
+   * @param array $options the run options (see self::getRunOptions)
    * @return boolean
    */
   public static function validateFio($options) {
@@ -1770,7 +1780,7 @@ abstract class BlockStorageTest {
    * validate run options. returns an array populated with error messages 
    * indexed by the argument name. If options are valid, the array returned
    * will be empty
-   * @param array $options the run options (see BlockStorageTest::getRunOptions)
+   * @param array $options the run options (see self::getRunOptions)
    * @return array
    */
   public static function validateRunOptions($options) {
@@ -1786,7 +1796,7 @@ abstract class BlockStorageTest {
       'ss_max_rounds' => array('min' => 5, 'max' => 100),
       'ss_verification' => array('min' => 1, 'max' => 100),
       'target' => array('required' => TRUE, 'write' => TRUE),
-      'test' => array('option' => BlockStorageTest::getSupportedTests(), 'required' => TRUE),
+      'test' => array('option' => self::getSupportedTests(), 'required' => TRUE),
       'threads' => array('min' => 1),
       'threads_per_core_max' => array('min' => 1),
       'threads_per_target_max' => array('min' => 1),
@@ -1799,7 +1809,7 @@ abstract class BlockStorageTest {
       $volumes = 0;
       // device and volume type targets cannot be mixed
       foreach($options['target'] as $target) {
-        $device = BlockStorageTest::getDevice($target);
+        $device = self::getDevice($target);
         $device == $target ? $devices++ : $volumes++;
       }
       if ($devices && $volumes) $valid = array('target' => 'Device and volume type targets cannot be mixed');
@@ -1836,7 +1846,7 @@ abstract class BlockStorageTest {
     if (!$noprecondition && $nopreconditionRotational) {
       $rotational = TRUE;
       foreach($this->options['target'] as $target) {
-        if (!BlockStorageTest::isRotational($target)) {
+        if (!self::isRotational($target)) {
           $rotational = FALSE;
           break;
         }
