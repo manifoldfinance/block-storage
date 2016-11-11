@@ -50,12 +50,12 @@ abstract class BlockStorageTest {
   /**
    * formula to use for --wd_sleep_between sc1
    */
-  const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_SC1 = '{duration}*({size} >= 21333 ? 0 : (({size} >= 3200 ? 250 : ({size} >= 3072 ? 240 : ({size} >= 2048 ? 160 : ({size} >= 1024 ? 80 : 40)))) - (({size}/1024)*12))/(({size}/1024)*12))';
+  const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_SC1 = '{duration}*({size} >= 20833 ? 0 : (({size} >= 3125 ? 250 : ({size} >= 3000 ? 240 : ({size} >= 2000 ? 160 : ({size} >= 1000 ? 80 : 40)))) - (({size}/1000)*12))/(({size}/1000)*12))';
   
   /**
    * formula to use for --wd_sleep_between st1
    */
-  const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_ST1 = '{duration}*({size} >= 12800 ? 0 : (({size} >= 2048 ? 500 : ({size} >= 1024 ? 250 : 125)) - (({size}/1024)*40))/(({size}/1024)*40))';
+  const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_ST1 = '{duration}*({size} >= 12500 ? 0 : (({size} >= 2000 ? 500 : ({size} >= 1000 ? 250 : 125)) - (({size}/1000)*40))/(({size}/1000)*40))';
   
   /**
    * true if targets are devices
