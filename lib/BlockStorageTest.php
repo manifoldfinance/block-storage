@@ -987,7 +987,7 @@ abstract class BlockStorageTest {
     $attrs = array('capacity' => array(), 'purge' => array(), 'vol' => array());
     foreach($this->options['target'] as $target) {
       $capacity = self::getFreeSpace($target);
-      $capacity = sprintf('%s %sB', $capacity >= 1024 ? round($capacity/1024, 2) : $capacity, $capacity >= 1024 ? 'G' : 'M');
+      $capacity = sprintf('%s %siB', $capacity >= 1024 ? round($capacity/1024, 2) : $capacity, $capacity >= 1024 ? 'G' : 'M');
       $attrs['capacity'][$capacity] = TRUE;
       $capacities .= sprintf('%s%s', $capacities ? ', ' : '', $capacity);
       $pmethod = isset($this->purgeMethods[$target]) ? self::getPurgeMethodDesc($this->purgeMethods[$target]) : 'None';
