@@ -43,6 +43,11 @@ abstract class BlockStorageTest {
   const BLOCK_STORAGE_TEST_FREE_SPACE_BUFFER = 100;
   
   /**
+   * formula to use for --wd_sleep_between efs
+   */
+  const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_EFS = '{duration}*({size} >= 4096 ? 0 : ({size} >= 1024 ? 1 : ({size} >= 512 ? 4 : ({size} >= 256 ? 8 : 200))))';
+  
+  /**
    * formula to use for --wd_sleep_between gp2
    */
   const BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_GP2 = '{duration}*({size} >= 1000 ? 0 : ({size} >= 750 ? 0.33 : ({size} >= 500 ? 1 : ({size} >= 250 ? 3 : ({size} >= 214 ? 3.6734 : ({size} >= 100 ? 9 : 29))))))';
@@ -355,7 +360,12 @@ abstract class BlockStorageTest {
               $volumes++;
             }
             $size = round(array_sum($sizes)/count($sizes));
-            $formula = str_replace(' ', '', $this->options['wd_sleep_between'] == 'gp2' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_GP2 : ($this->options['wd_sleep_between'] == 'sc1' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_SC1 : ($this->options['wd_sleep_between'] == 'st1' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_ST1 : $this->options['wd_sleep_between'])));
+            if (isset($this->options['wd_sleep_between_size']) && file_exists($this->options['wd_sleep_between_size'])) {
+              $nsize = ((filesize($this->options['wd_sleep_between_size'])/1024)/1024)/1024;
+              print_msg(sprintf('Changed {size} value from %s GB to %s GB due to parameter --wd_sleep_between_size %s', $size, $nsize, $this->options['wd_sleep_between_size']), $this->verbose, __FILE__, __LINE__);
+              $size = $nsize;
+            }
+            $formula = str_replace(' ', '', $this->options['wd_sleep_between'] == 'gp2' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_GP2 : ($this->options['wd_sleep_between'] == 'sc1' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_SC1 : ($this->options['wd_sleep_between'] == 'st1' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_ST1 : ($this->options['wd_sleep_between'] == 'efs' ? BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_EFS : $this->options['wd_sleep_between']))));
             $formula = str_replace('{duration}', $duration, $formula);
             $formula = str_replace('{size}', $size, $formula);
             $formula = str_replace('{volumes}', $volumes, $formula);
@@ -1310,6 +1320,7 @@ abstract class BlockStorageTest {
       'v' => 'verbose',
       'wd_test_duration:',
       'wd_sleep_between:',
+      'wd_sleep_between_size:',
       'wkhtml_xvfb'
     );
     $options = parse_args($opts, array('skip_blocksize', 'skip_workload', 'target', 'test'));

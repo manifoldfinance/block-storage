@@ -408,6 +408,29 @@ ARGUMENTS:
                             iterations in seconds. Default is 60 per the SNIA 
                             test specification
                             
+--wd_sleep_between          Optional sleep duration (seconds) to apply between 
+                            each workload dependent test. This may be a formula
+                            containing the following dynamic values:
+                              {duration} => duration of the last test (secs)
+                              {size}     => size of targets (GB)
+                              {volumes}  => number of target volumes
+                            Ternary operations are also supported. This 
+                            parameter may be useful for credit based storage 
+                            platforms like Amazon EC2 EBS volumes:
+                            http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
+                            The following EBS shortcuts are supported:
+
+                            --wd_sleep_between gp2 => {duration}*({size} >= 1000 ? 0 : ({size} >= 750 ? 0.33 : ({size} >= 500 ? 1 : ({size} >= 250 ? 3 : ({size} >= 214 ? 3.6734 : ({size} >= 100 ? 9 : 29))))))
+                            --wd_sleep_between st1 => {duration}*({size} >= 12500 ? 0 : (({size} >= 2000 ? 500 : ({size} >= 1000 ? 250 : 125)) - (({size}/1000)*40))/(({size}/1000)*40))
+                            --wd_sleep_between sc1 => {duration}*({size} >= 20833 ? 0 : (({size} >= 3125 ? 250 : ({size} >= 3000 ? 240 : ({size} >= 2000 ? 160 : ({size} >= 1000 ? 80 : 40)))) - (({size}/1000)*12))/(({size}/1000)*12))
+                            --wd_sleep_between efs => {duration}*({size} >= 4096 ? 0 : ({size} >= 1024 ? 1 : ({size} >= 512 ? 4 : ({size} >= 256 ? 8 : 200))))
+
+--wd_sleep_between_size     Optional path to a file to use in determining a 
+                            target size for use in the wd_sleep_between sleep 
+                            interval calculation (the {size} value). May be 
+                            useful for NFS volumes where size reported for the
+                            volume may not accurate
+                            
 --wkhtml_xvfb               If set, wkhtmlto* commands will be prefixed with 
                             xvfb-run (which is added as a dependency). This is
                             useful when the wkhtml installation does not 
