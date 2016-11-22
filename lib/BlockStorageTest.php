@@ -1134,7 +1134,9 @@ abstract class BlockStorageTest {
     if ($cols = self::getSerializedOptions($dir)) {
       if (isset($cols['target'])) {
         $sizes = array();
-        foreach($cols['target'] as $target) $sizes[$target] = round(self::getFreeSpace($target)/1024);
+        foreach($cols['target'] as $target) {
+          $sizes[$target] = file_exists($file = sprintf('%s/%s', $target, self::BLOCK_STORAGE_TEST_FILE_NAME)) ? round(((filesize($file)/1024)/1024)/1024) : round(self::getFreeSpace($target)/1024);
+        }
         $cols['target_count'] = count($cols['target']);
         $cols['target_size_gb'] = round(array_sum($sizes)/count($sizes));
         $cols['target_sizes'] = $sizes;
