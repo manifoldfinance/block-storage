@@ -293,7 +293,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
         foreach($blockSizes as $bs) {
           $name = sprintf('x%d-%s-%s-rand', $x, str_replace('/', '_', $rw), $bs);
           print_msg(sprintf('Executing random IO test iteration for round %d of %d, rw ratio %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
-          $params = array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'time_based' => FALSE, 'numjobs' => count($this->options['target']), 'iodepth' => 1);
+          $params = array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'time_based' => FALSE, 'numjobs' => count($this->options['target']), 'iodepth' => 1, 'lockfile' => 'exclusive');
           if ($read == 100) $params['rw'] = 'randread';
           else if ($write == 100) $params['rw'] = 'randwrite';
           else {
