@@ -280,7 +280,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
     print_msg(sprintf('Initiating workload dependent preconditioning and steady state for LATENCY test'), $this->verbose, __FILE__, __LINE__);
     $max = $this->options['ss_max_rounds'];
     $ssMetrics = array();
-    $blockSizes = $this->filterBlocksizes(array('8k', '4k', '512b'));
+    $blockSizes = $this->filterBlocksizes(array('16k', '8k', '4k', '512b'));
     $lastBlockSize = $blockSizes[count($blockSizes) - 1];
     $workloads = $this->filterWorkloads(array('100/0', '65/35', '0/100'));
     
