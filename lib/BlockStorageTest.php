@@ -1346,8 +1346,8 @@ abstract class BlockStorageTest {
     
     // don't use random IO
     if (isset($options['norandom']) && $options['norandom']) {
-      if (isset($options['fio']['refill_buffers'])) unset($options['fio']['refill_buffers']);
-      if (isset($options['fio']['scramble_buffers'])) unset($options['fio']['scramble_buffers']);
+      if (isset($options['fio_options']['refill_buffers'])) unset($options['fio_options']['refill_buffers']);
+      if (isset($options['fio_options']['scramble_buffers'])) unset($options['fio_options']['scramble_buffers']);
     }
     // implicit nosecureerase
     if (!isset($options['secureerase_pswd'])) $options['nosecureerase'] = TRUE;
