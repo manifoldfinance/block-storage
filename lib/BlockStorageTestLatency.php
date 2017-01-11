@@ -235,7 +235,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
       'Test Stimulus 1' => 'LAT Loop',
       '&nbsp;&nbsp;RW Mix' => 'Outer Loop',
       '&nbsp;&nbsp;Block Sizes' => 'Inner Loop',
-      '&nbsp;&nbsp;TOIO - TC/QD' => sprintf('TC %d/QD 1', count($this->options['target'])),
+      '&nbsp;&nbsp;TOIO - TC/QD' => 'TC 1/QD 1',
       '&nbsp;&nbsp;Steady State' => $this->wdpc !== NULL ? sprintf('%d - %d%s', $this->wdpcComplete - 4, $this->wdpcComplete, $this->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A',
       'Histogram' => 'N/A',
       '&nbsp;&nbsp;TOIO - TC/QD ' => 'N/A',
@@ -293,7 +293,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
         foreach($blockSizes as $bs) {
           $name = sprintf('x%d-%s-%s-rand', $x, str_replace('/', '_', $rw), $bs);
           print_msg(sprintf('Executing random IO test iteration for round %d of %d, rw ratio %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
-          $params = array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'time_based' => FALSE, 'numjobs' => count($this->options['target']), 'iodepth' => 1, 'lockfile' => 'exclusive');
+          $params = array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'time_based' => FALSE, 'numjobs' => 1, 'iodepth' => 1, 'lockfile' => 'exclusive');
           if ($read == 100) $params['rw'] = 'randread';
           else if ($write == 100) $params['rw'] = 'randwrite';
           else {
