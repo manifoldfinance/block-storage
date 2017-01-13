@@ -367,7 +367,15 @@ variables (e.g. `export bm_param_test=iops`)
                             type (device or volume). WARNING: if multiple 
                             volume type targets are specified, active range 
                             will be limited to the least amount of free space 
-                            on all targets
+                            on all targets.
+                            
+                            Multiple devices may also by indicated with an 
+                            alphanumeric range value enclosed in brackets. A 
+                            few examples:
+                            "/files[1-40]" == "/files1,/files2,...,files40"
+                            "/dev/vd[b-e]" == "/dev/vdb,/dev/vdc,/dev/vdd,/dev/vde"
+                            "/dev/xvdb[a-b]" == "/dev/xvdba,/dev/xvdbb"
+                            "/dev/xvd[d-z],/dev/xvdb[a-b]" == "/dev/xvdd,...,/dev/xvdz,/dev/xvdba,/dev/xvdbb"
                             
 * target_skip_not_present   If set, targets specified that do not exist will be
                             ignored (so long as at least 1 target exists)

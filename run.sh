@@ -327,6 +327,15 @@ ARGUMENTS:
                             will be limited to the least amount of free space 
                             on all targets
                             
+                            Multiple devices may also by indicated with an 
+                            alphanumeric range value enclosed in brackets. A 
+                            few examples:
+                            "/files[1-40]" == "/files1,/files2,...,files40"
+                            "/dev/vd[b-e]" == "/dev/vdb,/dev/vdc,/dev/vdd,/dev/vde"
+                            "/dev/sd[c-ap]" == "/dev/sdc,/dev/sdd,...,/dev/sdz,/dev/sdaa,...,/dev/sdap" 
+                            (NOTE: double character ranges can only be assigned to the final value)
+                            "/dev/xvdb[a-b]" == "/dev/xvdba,/dev/xvdbb"
+                            
 --target_skip_not_present   If set, targets specified that do not exist will be
                             ignored (so long as at least 1 target exists)
 
