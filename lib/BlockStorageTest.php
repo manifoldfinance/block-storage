@@ -1339,7 +1339,7 @@ abstract class BlockStorageTest {
         foreach($options[$key] as $temp) {
           foreach(explode(',', $temp) as $target) {
             // target ranges (e.g. /dev/xvdb[a-b])
-            if ($key == 'target' && preg_match('/\[\s*([a-zA-Z0-9])\s*\-\s*([a-zA-Z0-9])\s*\]/', trim($target), $m)) {
+            if ($key == 'target' && (preg_match('/\[\s*([a-zA-Z])\s*\-\s*([a-zA-Z])\s*\]/', trim($target), $m) || preg_match('/\[\s*([0-9]+)\s*\-\s*([0-9]+)\s*\]/', trim($target), $m))) {
               $i = $m[1];
               for($i=$m[1]; $i<=$m[2]; $i++) $targets[] = str_replace($m[0], $i, trim($target));
             }
