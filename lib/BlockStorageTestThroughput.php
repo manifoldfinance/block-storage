@@ -281,11 +281,17 @@ class BlockStorageTestThroughput extends BlockStorageTest {
   protected function getTestParameters() {
     if (isset($this->controller)) return $this->controller->getTestParameters();
     else {
+      $threads = $this->options['threads_total'];
+      $qd = $this->options['oio_per_thread'];
+      if (isset($this->options['throughput_single_thread']) && $this->options['threads_total'] > 1) {
+        $threads = 1;
+        $qd = $this->options['oio_per_thread']*$this->options['threads_total'];
+      }
       return array(
         'Test Stimulus 1' => isset($this->subtests['1024k']) ? 'SEQ 1024KiB' : 'None',
         '&nbsp;&nbsp;RW Mix' => isset($this->subtests['1024k']) ? '100:0 / 0:100' : '',
         '&nbsp;&nbsp;Block Sizes' => isset($this->subtests['1024k']) ? 'SEQ 1024KiB' : '',
-        '&nbsp;&nbsp;TOIO - TC/QD' => isset($this->subtests['1024k']) ? sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']) : '',
+        '&nbsp;&nbsp;TOIO - TC/QD' => isset($this->subtests['1024k']) ? sprintf('TC %d/QD %d', $threads, $qd) : '',
         '&nbsp;&nbsp;Steady State' => isset($this->subtests['1024k']) && $this->subtests['1024k']->wdpc !== NULL ? sprintf('%d - %d%s', $this->subtests['1024k']->wdpcComplete - 4, $this->subtests['1024k']->wdpcComplete, $this->subtests['1024k']->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A',
         'Test Stimulus 2' => isset($this->subtests['128k']) ? 'SEQ 128KiB' : 'None',
         '&nbsp;&nbsp;TOIO - TC/QD ' => isset($this->subtests['128k']) ? sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']) : '',
@@ -346,7 +352,13 @@ class BlockStorageTestThroughput extends BlockStorageTest {
         foreach($workloads as $rw) {
           $name = sprintf('x%d-%s-%s-seq', $x, str_replace('/', '_', $rw), $bs);
           print_msg(sprintf('Executing sequential THROUGHPUT test iteration for round %d of %d, workload %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
-          if ($fio = $this->fio(array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'rw' => $rw == '100/0' ? 'read' : 'write', 'time_based' => FALSE), 'wdpc')) {
+          $options = array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'rw' => $rw == '100/0' ? 'read' : 'write', 'time_based' => FALSE);
+          if (isset($this->options['throughput_single_thread']) && $this->options['threads_total'] > 1) {
+            $options['numjobs'] = 1;
+            $options['iodepth'] = $this->options['oio_per_thread']*$this->options['threads_total'];
+            print_msg(sprintf('Reduced numjobs from %d to 1 and increased queue depth from %d to %d due to --throughput_single_thread parameter', $this->options['threads_total'], $this->options['oio_per_thread'], $options['iodepth']), $this->verbose, __FILE__, __LINE__);
+          }
+          if ($fio = $this->fio($options, 'wdpc')) {
             print_msg(sprintf('Sequential THROUGHPUT test iteration for round %d of %d, workload %s and block size %s was successful', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
             $results = $this->fio['wdpc'][count($this->fio['wdpc']) - 1];
           }

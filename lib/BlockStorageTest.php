@@ -1317,6 +1317,7 @@ abstract class BlockStorageTest {
       'threads:',
       'threads_per_core_max:',
       'threads_per_target_max:',
+      'throughput_single_thread',
       'timeout:',
       'trim_offset_end:',
       'v' => 'verbose',
