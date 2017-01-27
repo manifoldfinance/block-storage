@@ -1139,6 +1139,7 @@ abstract class BlockStorageTest {
         }
         $cols['target_count'] = count($cols['target']);
         $cols['target_size_gb'] = round(array_sum($sizes)/count($sizes));
+        if ($cols['target_size_gb'] < 1) $cols['target_size_gb'] = 1;
         $cols['target_sizes'] = $sizes;
       }
       // storage range targets (e.g. /xvd[a-e])
