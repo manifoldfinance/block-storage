@@ -1025,7 +1025,7 @@ abstract class BlockStorageTest {
     $params = array(
       'Storage Config' => $this->options['meta_storage_config'] . (isset($this->options['meta_host_cache']) ? sprintf(' (%s host cache enabled)', $this->options['meta_host_cache']) : '') . (isset($this->options['meta_encryption']) ? ' (w/encryption)' : '') . (isset($this->options['meta_burst']) ? ' (w/burst)' : '') . (isset($this->options['meta_piops']) ? ' (' . $this->options['meta_piops'] . ' PIOPS)' : ''),
       "# ${t}s" => count($this->options['target']),
-      "${t}s" => implode(', ', count($this->options['target']) > 8 ? array_merge(array_slice($this->options['target'], 0, 4), array('...'), array_slice($this->options['target'], -4)) : $this->options['target']),
+      "${t}s" => isset($this->options['target_base']) ? $this->options['target_base'] : (implode(', ', count($this->options['target']) > 8 ? array_merge(array_slice($this->options['target'], 0, 4), array('...'), array_slice($this->options['target'], -4)) : $this->options['target'])),
       "${t} Capacities" => $capacities,
       'Purge Methods' => $purge,
       'Volume Info' => $volInfo,
