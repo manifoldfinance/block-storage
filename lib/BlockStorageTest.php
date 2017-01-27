@@ -1141,6 +1141,11 @@ abstract class BlockStorageTest {
         $cols['target_size_gb'] = round(array_sum($sizes)/count($sizes));
         $cols['target_sizes'] = $sizes;
       }
+      // storage range targets (e.g. /xvd[a-e])
+      if (isset($cols['target_base'])) {
+        $cols['target'] = $cols['target_base'];
+        unset($cols['target_base']);
+      }
       foreach(array_keys($cols) as $i) if (is_array($cols[$i])) $cols[$i] = implode(',', $cols[$i]);
     }
     return $cols;
@@ -1341,6 +1346,7 @@ abstract class BlockStorageTest {
           foreach(explode(',', $temp) as $target) {
             // target ranges (e.g. /dev/xvdb[a-b])
             if ($key == 'target' && (preg_match('/\[\s*([a-zA-Z])\s*\-\s*([a-zA-Z])\s*\]/', trim($target), $m) || preg_match('/\[\s*([0-9]+)\s*\-\s*([0-9]+)\s*\]/', trim($target), $m))) {
+              $options['target_base'] = $options[$key];
               $i = $m[1];
               for($i=$m[1]; $i<=$m[2]; $i++) $targets[] = str_replace($m[0], $i, trim($target));
             }
