@@ -1323,7 +1323,8 @@ abstract class BlockStorageTest {
       'threads:',
       'threads_per_core_max:',
       'threads_per_target_max:',
-      'throughput_single_thread',
+      'throughput_st',
+      'throughput_st_rotational',
       'timeout:',
       'trim_offset_end:',
       'v' => 'verbose',
@@ -1358,6 +1359,22 @@ abstract class BlockStorageTest {
       }
     }
     foreach(get_prefixed_params('fio_') as $key => $val) $options['fio_options'][$key] = $val;
+    
+    // apply throughput_st for rotational targets only
+    if (isset($options['throughput_st']) && isset($options['throughput_st_rotational']) && isset($options['target']) && is_array($options['target']) && count($options['target'])) {
+      $rotational = TRUE;
+      foreach($options['target'] as $target) {
+        if (!self::isRotational($target)) {
+          $rotational = FALSE;
+          break;
+        }
+      }
+      if (!$rotational) {
+        print_msg('Removed --throughput_st option because targets are not rotational', $verbose, __FILE__, __LINE__);
+        unset($options['throughput_st']);
+      }
+      else print_msg('Kept --throughput_st option because targets are rotational', $verbose, __FILE__, __LINE__);
+    }
     
     // don't use random IO
     if (isset($options['norandom']) && $options['norandom']) {

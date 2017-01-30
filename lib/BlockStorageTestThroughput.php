@@ -283,7 +283,7 @@ class BlockStorageTestThroughput extends BlockStorageTest {
     else {
       $threads = $this->options['threads_total'];
       $qd = $this->options['oio_per_thread'];
-      if (isset($this->options['throughput_single_thread']) && $this->options['threads_total'] > 1) {
+      if (isset($this->options['throughput_st']) && $this->options['threads_total'] > 1) {
         $threads = 1;
         $qd = $this->options['oio_per_thread']*$this->options['threads_total'];
       }
@@ -353,10 +353,10 @@ class BlockStorageTestThroughput extends BlockStorageTest {
           $name = sprintf('x%d-%s-%s-seq', $x, str_replace('/', '_', $rw), $bs);
           print_msg(sprintf('Executing sequential THROUGHPUT test iteration for round %d of %d, workload %s and block size %s', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);
           $options = array('blocksize' => $bs, 'name' => $name, 'runtime' => $this->options['wd_test_duration'], 'rw' => $rw == '100/0' ? 'read' : 'write', 'time_based' => FALSE);
-          if (isset($this->options['throughput_single_thread']) && $this->options['threads_total'] > 1) {
+          if (isset($this->options['throughput_st']) && $this->options['threads_total'] > 1) {
             $options['numjobs'] = 1;
             $options['iodepth'] = $this->options['oio_per_thread']*$this->options['threads_total'];
-            print_msg(sprintf('Reduced numjobs from %d to 1 and increased queue depth from %d to %d due to --throughput_single_thread parameter', $this->options['threads_total'], $this->options['oio_per_thread'], $options['iodepth']), $this->verbose, __FILE__, __LINE__);
+            print_msg(sprintf('Reduced numjobs from %d to 1 and increased queue depth from %d to %d due to --throughput_st parameter', $this->options['threads_total'], $this->options['oio_per_thread'], $options['iodepth']), $this->verbose, __FILE__, __LINE__);
           }
           if ($fio = $this->fio($options, 'wdpc')) {
             print_msg(sprintf('Sequential THROUGHPUT test iteration for round %d of %d, workload %s and block size %s was successful', $x, $max, $rw, $bs), $this->verbose, __FILE__, __LINE__);

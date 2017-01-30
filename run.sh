@@ -404,13 +404,17 @@ ARGUMENTS:
 --threads_per_target_max    The maximum number of threads per target - default
                             is 8
                             
---throughput_single_thread  If set, throughput tests will be limited to a 
+--throughput_st             If set, throughput tests will be limited to a 
                             single thread and if the default number of threads
                             if >1, oio_per_thread will be increased to 
                             threads * oio_per_thread. For example, if threads
                             is 2 and oio_per_thread is 64, oio_per_thread 
                             would be increased to 128 and threads reduced to 1
                             if this parameter was set
+                            
+--throughput_st_rotational  If set along with throughput_single_thread
+                            then --throughput_single_thread will be used for 
+                            rotational targets only
 
 --timeout                   Max time to permit for testing in seconds. Default 
                             is 24 hours (86400 seconds)
