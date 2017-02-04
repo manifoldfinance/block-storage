@@ -1919,7 +1919,7 @@ abstract class BlockStorageTest {
       print_msg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). This may take a while...', $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
       for($i=1; $i<=$this->options['precondition_passes']; $i++) {
         
-        $opts = array('blocksize' => $bs, 'rw' => 'write');
+        $opts = array('blocksize' => $bs, 'rw' => 'write', 'numjobs' => 1);
         print_msg(sprintf('Attempting workload independent precondition pass %d of %d', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
         if ($this->fio($opts, 'wipc')) {
           $this->wipc = TRUE;
