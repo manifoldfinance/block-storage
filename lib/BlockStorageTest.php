@@ -1343,12 +1343,12 @@ abstract class BlockStorageTest {
     // target/test argument (expand comma separated values)
     foreach(array('target', 'test') as $key) {
       if (isset($options[$key])) {
+        if ($key == 'target') $options['target_base'] = $options[$key];
         $targets = array();
         foreach($options[$key] as $temp) {
           foreach(explode(',', $temp) as $target) {
             // target ranges (e.g. /dev/xvdb[a-b])
             if ($key == 'target' && (preg_match('/\[\s*([a-zA-Z])\s*\-\s*([a-zA-Z])\s*\]/', trim($target), $m) || preg_match('/\[\s*([0-9]+)\s*\-\s*([0-9]+)\s*\]/', trim($target), $m))) {
-              $options['target_base'] = $options[$key];
               $i = $m[1];
               for($i=$m[1]; $i<=$m[2]; $i++) $targets[] = str_replace($m[0], $i, trim($target));
             }
