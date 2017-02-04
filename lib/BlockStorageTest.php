@@ -340,7 +340,7 @@ abstract class BlockStorageTest {
       unset($options['filename']);
       $cmd .= ' --name=global';
       foreach($options as $opt => $val) $cmd .= sprintf(' --%s%s', $opt, $val !== FALSE && $val !== NULL ? '=' . $val : '');
-      foreach($jtargets as $i => $jtarget) $cmd .= sprintf(' --name=%s%d --filename=%s', $jname, $i+1, $jtarget);
+      foreach($jtargets as $i => $jtarget) $cmd .= sprintf(' --name=%s-%d --filename=%s', $jname, $i+1, $jtarget);
       print_msg(sprintf('Starting fio using command: %s', $cmd), $this->verbose, __FILE__, __LINE__);
       $start = time();
       $started = date('Y-m-d H:i:s');
