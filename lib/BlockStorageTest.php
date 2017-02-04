@@ -273,7 +273,7 @@ abstract class BlockStorageTest {
       $cmd = $this->options['fio'];
       $options = array_merge($this->options['fio_options'], $options);
       if (!isset($options['numjobs'])) {
-        $options['numjobs'] = count($targets) * $this->options['threads'];
+        $options['numjobs'] = $this->options['threads'];
         if ($options['numjobs'] <= 0) $options['numjobs'] = 1;
       }
       if (!isset($options['iodepth'])) $options['iodepth'] = $this->options['oio_per_thread'];
@@ -283,7 +283,7 @@ abstract class BlockStorageTest {
         $options['filename'] = $filename; 
       }
       $options['group_reporting'] = FALSE;
-      $options['output-format'] = 'json';
+      $options['output-format'] =   'json';
       if (!isset($options['name'])) $options['name'] = sprintf('%s-%d', $step, isset($this->fio[$step]) ? count($this->fio[$step]) + 1 : 1);
       // determine size
       if (!isset($options['size'])) {
@@ -334,7 +334,13 @@ abstract class BlockStorageTest {
       // use sequential IO only
       if (isset($this->options['sequential_only']) && isset($options['rw']) && preg_match('/rand/', $options['rw'])) $options['rw'] = str_replace('rand', '', $options['rw']);
       
+      $jname = $options['name'];
+      unset($options['name']);
+      $jtargets = explode(':', $options['filename']);
+      unset($options['filename']);
+      $cmd .= ' --name=global';
       foreach($options as $opt => $val) $cmd .= sprintf(' --%s%s', $opt, $val !== FALSE && $val !== NULL ? '=' . $val : '');
+      foreach($jtargets as $i => $jtarget) $cmd .= sprintf(' --name=%s%d --filename=%s', $jname, $i+1, $jtarget);
       print_msg(sprintf('Starting fio using command: %s', $cmd), $this->verbose, __FILE__, __LINE__);
       $start = time();
       $started = date('Y-m-d H:i:s');
