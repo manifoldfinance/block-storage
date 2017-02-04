@@ -1921,7 +1921,7 @@ abstract class BlockStorageTest {
         
         $opts = array('blocksize' => $bs, 'rw' => 'write');
         print_msg(sprintf('Attempting workload independent precondition pass %d of %d', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
-        if ($this->fio($opts, 'wipc', NULL, TRUE, TRUE)) {
+        if ($this->fio($opts, 'wipc')) {
           $this->wipc = TRUE;
           $_wipcPerformed = TRUE;
           print_msg(sprintf('Workload independent precondition pass %d of %d successful', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
