@@ -235,7 +235,7 @@ class BlockStorageTestLatency extends BlockStorageTest {
       'Test Stimulus 1' => 'LAT Loop',
       '&nbsp;&nbsp;RW Mix' => 'Outer Loop',
       '&nbsp;&nbsp;Block Sizes' => 'Inner Loop',
-      '&nbsp;&nbsp;TOIO - TC/QD' => 'TC 1/QD 1',
+      '&nbsp;&nbsp;TOIO - TC/QD' => 'TC ' . count($this->options['target']) . '/QD 1',
       '&nbsp;&nbsp;Steady State' => $this->wdpc !== NULL ? sprintf('%d - %d%s', $this->wdpcComplete - 4, $this->wdpcComplete, $this->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A',
       'Histogram' => 'N/A',
       '&nbsp;&nbsp;TOIO - TC/QD ' => 'N/A',

@@ -281,13 +281,11 @@ class BlockStorageTestThroughput extends BlockStorageTest {
   protected function getTestParameters() {
     if (isset($this->controller)) return $this->controller->getTestParameters();
     else {
-      $threads = $this->options['threads_total'];
-      $qd = $this->options['oio_per_thread'];
       return array(
         'Test Stimulus 1' => isset($this->subtests['1024k']) ? 'SEQ 1024KiB' : 'None',
         '&nbsp;&nbsp;RW Mix' => isset($this->subtests['1024k']) ? '100:0 / 0:100' : '',
         '&nbsp;&nbsp;Block Sizes' => isset($this->subtests['1024k']) ? 'SEQ 1024KiB' : '',
-        '&nbsp;&nbsp;TOIO - TC/QD' => isset($this->subtests['1024k']) ? sprintf('TC %d/QD %d', $threads, $qd) : '',
+        '&nbsp;&nbsp;TOIO - TC/QD' => isset($this->subtests['1024k']) ? sprintf('TC %d/QD %d', count($this->options['target']), $this->options['oio_per_thread']) : '',
         '&nbsp;&nbsp;Steady State' => isset($this->subtests['1024k']) && $this->subtests['1024k']->wdpc !== NULL ? sprintf('%d - %d%s', $this->subtests['1024k']->wdpcComplete - 4, $this->subtests['1024k']->wdpcComplete, $this->subtests['1024k']->wdpc ? '' : ' (NOT ACHIEVED)') : 'N/A',
         'Test Stimulus 2' => isset($this->subtests['128k']) ? 'SEQ 128KiB' : 'None',
         '&nbsp;&nbsp;TOIO - TC/QD ' => isset($this->subtests['128k']) ? sprintf('TC %d/QD %d', $this->options['threads_total'], $this->options['oio_per_thread']) : '',
