@@ -662,6 +662,12 @@ abstract class BlockStorageTest {
       }
       fclose($df);
       
+      // Coordinates are all 0 - cannot generate graphs
+      if (!$maxY) {
+        print_msg('Failed to generate line chart - Y coordinates are all 0', $this->verbose, __FILE__, __LINE__, TRUE);
+        return NULL;
+      }
+      
       // determine x tic settings
       $xMin = isset($settings['xMin']) ? $settings['xMin'] : NULL;
       $xMax = isset($settings['xMax']) ? $settings['xMax'] : NULL;
