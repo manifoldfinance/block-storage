@@ -236,6 +236,9 @@ ARGUMENTS:
                             the default is 2X. Use this or the --noprecondition
                             argument to change this default behavior
                             
+--precondition_time         Fix each preconditioning pass to this specific 
+                            duration (seconds)
+                            
 --purge_once                If set, purge will be performed once only instead 
                             of prior to each test performed
 

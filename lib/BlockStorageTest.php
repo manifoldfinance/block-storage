@@ -1322,6 +1322,7 @@ abstract class BlockStorageTest {
       'output:',
       'precondition_once',
       'precondition_passes:',
+      'precondition_time:',
       'purge_once',
       'randommap',
       'savefio',      
@@ -1852,6 +1853,7 @@ abstract class BlockStorageTest {
       'oio_per_thread' => array('min' => 1, 'max' => 256),
       'output' => array('write' => TRUE),
       'precondition_passes' => array('min' => 1, 'max' => 5),
+      'precondition_time' => array('min' => 60, 'max' => 86400),
       'skip_blocksize' => array('option' => array('1m', '128k', '64k', '32k', '16k', '8k', '512b')),
       'skip_workload' => array('option' => array('100/0', '95/5', '65/35', '50/50', '35/65', '5/95')),
       'ss_max_rounds' => array('min' => 5, 'max' => 100),
@@ -1924,10 +1926,11 @@ abstract class BlockStorageTest {
       $this->skipWipc = TRUE;
     }
     if (!$noprecondition) {
-      print_msg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). This may take a while...', $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
+      print_msg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). %s', $this->options['precondition_passes'], $this->options['precondition_time'] ? 'Preconditioning passes will be fixed ruation of ' . $this->options['precondition_time'] . ' secs' : 'This may take a while...'), $this->verbose, __FILE__, __LINE__);
       for($i=1; $i<=$this->options['precondition_passes']; $i++) {
         
         $opts = array('blocksize' => $bs, 'rw' => 'write', 'numjobs' => 1);
+        if ($this->options['precondition_time']) $opts['runtime'] = $this->options['precondition_time'];
         print_msg(sprintf('Attempting workload independent precondition pass %d of %d', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
         if ($this->fio($opts, 'wipc')) {
           $this->wipc = TRUE;
