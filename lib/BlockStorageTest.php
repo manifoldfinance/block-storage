@@ -1930,7 +1930,10 @@ abstract class BlockStorageTest {
       for($i=1; $i<=$this->options['precondition_passes']; $i++) {
         
         $opts = array('blocksize' => $bs, 'rw' => 'write', 'numjobs' => 1);
-        if ($this->options['precondition_time']) $opts['runtime'] = $this->options['precondition_time'];
+        if ($this->options['precondition_time']) {
+          $opts['runtime'] = $this->options['precondition_time'];
+          $opts['time_based'] = FALSE;
+        }
         print_msg(sprintf('Attempting workload independent precondition pass %d of %d', $i, $this->options['precondition_passes']), $this->verbose, __FILE__, __LINE__);
         if ($this->fio($opts, 'wipc')) {
           $this->wipc = TRUE;
