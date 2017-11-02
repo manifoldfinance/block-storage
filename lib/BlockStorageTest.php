@@ -362,7 +362,7 @@ abstract class BlockStorageTest {
             $volumes = 0;
             $sizes = array();
             foreach($this->options['target'] as $target) {
-              $sizes[] = self::getFreeSpace($target)/1024;
+              $sizes[] = $this->options['wd_sleep_between'] == 'efs' && isset($this->options['fio_size']) ? size_from_string($this->options['fio_size'])/1024 : self::getFreeSpace($target)/1024;
               $volumes++;
             }
             $size = round(array_sum($sizes)/count($sizes));

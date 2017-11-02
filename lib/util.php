@@ -799,15 +799,19 @@ function size_from_string($expr) {
   if (preg_match('/^([0-9\.]+)\s*([kmgtb]+)$/i', trim($expr), $m)) {
     switch(strtoupper(strtolower($m[2]))) {
       case 'TB':
+      case 'T':
         $mb = ($m[1]*1024)*1024;
         break;
       case 'GB':
+      case 'G':
         $mb = $m[1]*1024;
         break;
       case 'MB':
+      case 'M':
         $mb = $m[1]*1;
         break;
       case 'KB':
+      case 'K':
         $mb = $m[1]/1024;
         break;
       default:
