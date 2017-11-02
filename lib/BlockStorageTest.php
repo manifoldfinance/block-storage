@@ -1853,7 +1853,7 @@ abstract class BlockStorageTest {
       'oio_per_thread' => array('min' => 1, 'max' => 256),
       'output' => array('write' => TRUE),
       'precondition_passes' => array('min' => 1, 'max' => 5),
-      'precondition_time' => array('min' => 60, 'max' => 86400),
+      'precondition_time' => array('min' => 0, 'max' => 86400),
       'skip_blocksize' => array('option' => array('1m', '128k', '64k', '32k', '16k', '8k', '512b')),
       'skip_workload' => array('option' => array('100/0', '95/5', '65/35', '50/50', '35/65', '5/95')),
       'ss_max_rounds' => array('min' => 5, 'max' => 100),
