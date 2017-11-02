@@ -371,7 +371,7 @@ abstract class BlockStorageTest {
               print_msg(sprintf('Changed {size} value from %s GB to %s GB due to parameter --wd_sleep_between_size %s', $size, $nsize, $this->options['wd_sleep_between_size']), $this->verbose, __FILE__, __LINE__);
               $size = $nsize;
             }
-            $formula = str_replace(' ', '', $this->options['wd_sleep_between'] == 'gp2' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_GP2 : ($this->options['wd_sleep_between'] == 'sc1' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_SC1 : ($this->options['wd_sleep_between'] == 'st1' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_ST1 : ($this->options['wd_sleep_between'] == 'efs' ? BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_EFS : $this->options['wd_sleep_between']))));
+            $formula = str_replace(' ', '', $this->options['wd_sleep_between'] == 'gp2' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_GP2 : ($this->options['wd_sleep_between'] == 'sc1' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_SC1 : ($this->options['wd_sleep_between'] == 'st1' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_ST1 : ($this->options['wd_sleep_between'] == 'efs' ? self::BLOCK_STORAGE_TEST_WD_SLEEP_BETWEEN_EFS : $this->options['wd_sleep_between']))));
             $formula = str_replace('{duration}', $duration, $formula);
             $formula = str_replace('{size}', $size, $formula);
             $formula = str_replace('{volumes}', $volumes, $formula);
