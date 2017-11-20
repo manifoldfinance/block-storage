@@ -377,8 +377,8 @@ abstract class BlockStorageTest {
             $formula = str_replace('{volumes}', $volumes, $formula);
             eval(sprintf('$value=round(%s);', $formula));
             $value *= 1;
-            // add 25% buffer for EFS
-            if ($this->options['wd_sleep_between'] == 'efs') $value *= 1.25;
+            // add 10% buffer for EFS
+            if ($this->options['wd_sleep_between'] == 'efs') $value *= 1.1;
             print_msg(sprintf('--wd_sleep_between "%s" evaluated to %d using formula "%s" and parameters duration=%d; volumes=%d; size=%d', $this->options['wd_sleep_between'], $value, $formula, $duration, $volumes, $size), $this->verbose, __FILE__, __LINE__);
             if ($value > 0) {
               print_msg(sprintf('sleeping for %d seconds for --wd_sleep_between', $value), $this->verbose, __FILE__, __LINE__);
