@@ -335,8 +335,7 @@ ARGUMENTS:
                             few examples:
                             "/files[1-40]" == "/files1,/files2,...,files40"
                             "/dev/vd[b-e]" == "/dev/vdb,/dev/vdc,/dev/vdd,/dev/vde"
-                            "/dev/sd[c-ap]" == "/dev/sdc,/dev/sdd,...,/dev/sdz,/dev/sdaa,...,/dev/sdap" 
-                            (NOTE: double character ranges can only be assigned to the final value)
+                            "/dev/sd[c-ap]" == "/dev/sdc,/dev/sdd,...,/dev/sdz,/dev/sdaa,...,/dev/sdap"
                             "/dev/xvdb[a-b]" == "/dev/xvdba,/dev/xvdbb"
                             
 --target_skip_not_present   If set, targets specified that do not exist will be
