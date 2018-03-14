@@ -280,7 +280,7 @@ ARGUMENTS:
 
 --skip_workload             workloads to skip during testing. This argument may
                             be repeated. Valid options are:
-                            100/0, 95/5, 65/35, 50/50, 35/65, 5/95
+                            100/0, 95/5, 65/35, 50/50, 35/65, 5/95, 0/100
 
 --ss_max_rounds             The maximum number of test cycle iterations to 
                             allow for steady state verification. Default is 
