@@ -107,7 +107,7 @@ ARGUMENTS:
                             
 --meta_host_cache           Optional host caching designation for the test 
                             volumes (if applicable). One of the following 
-                            values: read or rw
+                            values: read, rw or write
                             
 --meta_instance_id          The compute service instance type this test pertains 
                             to (e.g. c3.xlarge). Used for report headers

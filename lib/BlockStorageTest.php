@@ -1456,8 +1456,8 @@ abstract class BlockStorageTest {
     
     // validate meta_host_cache value is read or rw
     if (isset($options['meta_host_cache'])) $options['meta_host_cache'] = trim(strtolower($options['meta_host_cache']));
-    if (isset($options['meta_host_cache']) && !in_array($options['meta_host_cache'], array('read', 'rw'))) {
-      print_msg(sprintf('Ignoring meta_host_cache %s (allowed values are read or rw)', $options['meta_host_cache']), $verbose, __FILE__, __LINE__);
+    if (isset($options['meta_host_cache']) && !in_array($options['meta_host_cache'], array('read', 'rw', 'write'))) {
+      print_msg(sprintf('Ignoring meta_host_cache %s (allowed values are read, rw or write)', $options['meta_host_cache']), $verbose, __FILE__, __LINE__);
       unset($options['meta_host_cache']);
     }
     
