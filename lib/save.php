@@ -21,7 +21,7 @@
 require_once(dirname(__FILE__) . '/BlockStorageTest.php');
 require_once(dirname(__FILE__) . '/save/BenchmarkDb.php');
 $status = 1;
-$args = parse_args(array('iteration:', 'nosave_fio', 'nostore_json', 'nostore_pdf', 'nostore_rrd', 'nostore_zip', 'spectre_meltdown', 'v' => 'verbose'));
+$args = parse_args(array('iteration:', 'nosave_fio', 'nostore_json', 'nostore_pdf', 'nostore_rrd', 'nostore_zip', 'spectre_meltdown', 'v' => 'verbose'), NULL, 'save_');
 
 // get result directories => each directory stores 1 iteration of results
 $dirs = array();
@@ -36,9 +36,13 @@ if ($db =& BenchmarkDb::getDb()) {
   $db->tablePrefix = 'block_storage_';
   
   // generate/save spectre/meltdown checker report
+  $spectreMeltdown = NULL;
   if (isset($args['spectre_meltdown']) && ch_check_sudo()) {
-    exec(sprintf('sudo %s/spectre-meltdown-checker.sh --batch json >%s/spectre-meltdown-checker.json', dirname(__FILE__), $dir));
-    if (file_exists($smc = sprintf('%s/spectre-meltdown-checker.json', $dir)) && filesize($smc)) {
+    $smc = sprintf('%s/spectre-meltdown-checker.txt', $dir);
+    print_msg(sprintf('Writing spectre/meltdown vunerability report to %s', $smc), isset($args['verbose']), __FILE__, __LINE__);
+    $spectreMeltdown = json_decode(trim(shell_exec(sprintf('sudo %s/spectre-meltdown-checker.sh --batch json 2>/dev/null', dirname(__FILE__)))), TRUE);
+    exec(sprintf('sudo %s/spectre-meltdown-checker.sh >%s 2>&1', dirname(__FILE__), $smc));
+    if (file_exists($smc) && filesize($smc)) {
       $saved = $db->saveArtifact($smc, 'spectre_meltdown_report');
       if ($saved) print_msg(sprintf('Saved %s successfully', basename($smc)), isset($args['verbose']), __FILE__, __LINE__);
       else if ($saved === NULL) print_msg(sprintf('Unable to save %s', basename($smc)), isset($args['verbose']), __FILE__, __LINE__, TRUE);
@@ -71,6 +75,12 @@ if ($db =& BenchmarkDb::getDb()) {
         $results['iteration'] = $iteration;
         $results = array_merge(BlockStorageTest::getMetaCols($dir), $results);
         $results['test'] = $test;
+        // spectre/meltdown status
+        if ($spectreMeltdown && isset($spectreMeltdown[0]['VULNERABLE'])) {
+          $result['spectre_variant1_vulnerable'] = $spectreMeltdown[0]['VULNERABLE'];
+          $result['spectre_variant2_vulnerable'] = $spectreMeltdown[1]['VULNERABLE'];
+          $result['meltdown_vulnerable'] = $spectreMeltdown[2]['VULNERABLE'];
+        }
         // save collectd rrd files
         if (!isset($args['nostore_rrd']) && file_exists($file = sprintf('%s/collectd-rrd-%s.zip', $dir, $test))) {
           $saved = $db->saveArtifact($file, 'collectd_rrd');
