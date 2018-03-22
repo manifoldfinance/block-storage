@@ -300,6 +300,12 @@ the others are not repeated, they will be applied to all submissions
                             values in ~/.ch_benchmark, use one line and comma
                             separated values. Wildcards are supported
                             
+--spectre_meltdown          Generate and store a spectre/meltdown report using 
+                            the spectre-meltdown-checker script included in 
+                            this repo from 
+                            https://github.com/speed47/spectre-meltdown-checker
+                            Requires sudo access
+                            
 --store                     Save result artifacts to object storage. The 
                             following argument values are supported:
                               azure     => save artifacts to an Azure Blob

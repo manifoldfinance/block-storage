@@ -21,7 +21,7 @@
 require_once(dirname(__FILE__) . '/BlockStorageTest.php');
 require_once(dirname(__FILE__) . '/save/BenchmarkDb.php');
 $status = 1;
-$args = parse_args(array('iteration:', 'nosave_fio', 'nostore_json', 'nostore_pdf', 'nostore_rrd', 'nostore_zip', 'v' => 'verbose'));
+$args = parse_args(array('iteration:', 'nosave_fio', 'nostore_json', 'nostore_pdf', 'nostore_rrd', 'nostore_zip', 'spectre_meltdown', 'v' => 'verbose'));
 
 // get result directories => each directory stores 1 iteration of results
 $dirs = array();
@@ -34,6 +34,17 @@ else $dirs[] = $dir;
 
 if ($db =& BenchmarkDb::getDb()) {
   $db->tablePrefix = 'block_storage_';
+  
+  // generate/save spectre/meltdown checker report
+  if (isset($args['spectre_meltdown']) && ch_check_sudo()) {
+    exec(sprintf('sudo %s/spectre-meltdown-checker.sh &>%s/spectre-meltdown-checker.txt', dirname(__FILE__), $dir));
+    if (file_exists($smc = sprintf('%s/spectre-meltdown-checker.txt', $dir)) && filesize($smc)) {
+      $saved = $db->saveArtifact($smc, 'spectre_meltdown_report');
+      if ($saved) print_msg(sprintf('Saved %s successfully', basename($smc)), isset($args['verbose']), __FILE__, __LINE__);
+      else if ($saved === NULL) print_msg(sprintf('Unable to save %s', basename($smc)), isset($args['verbose']), __FILE__, __LINE__, TRUE);
+      else print_msg(sprintf('Artifact %s will not be saved because --store was not specified', basename($smc)), isset($args['verbose']), __FILE__, __LINE__);
+    }
+  }
   
   // get results from each directory
   foreach($dirs as $i => $dir) {

@@ -50,6 +50,7 @@
   {"name": "report_zip", "type": "char(255)"},
   {"name": "skip_blocksize", "type": "char(64)"},
   {"name": "skip_workload", "type": "char(64)"},
+  {"name": "spectre_meltdown_report", "type": "char(255)"},
   {"name": "ss_average", "type": "float unsigned"},
   {"name": "ss_largest_data_excursion", "type": "float unsigned"},
   {"name": "ss_largest_slope_excursion", "type": "float unsigned"},
