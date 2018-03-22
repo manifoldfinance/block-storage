@@ -37,8 +37,8 @@ if ($db =& BenchmarkDb::getDb()) {
   
   // generate/save spectre/meltdown checker report
   if (isset($args['spectre_meltdown']) && ch_check_sudo()) {
-    exec(sprintf('sudo %s/spectre-meltdown-checker.sh &>%s/spectre-meltdown-checker.txt', dirname(__FILE__), $dir));
-    if (file_exists($smc = sprintf('%s/spectre-meltdown-checker.txt', $dir)) && filesize($smc)) {
+    exec(sprintf('sudo %s/spectre-meltdown-checker.sh --batch json >%s/spectre-meltdown-checker.json', dirname(__FILE__), $dir));
+    if (file_exists($smc = sprintf('%s/spectre-meltdown-checker.json', $dir)) && filesize($smc)) {
       $saved = $db->saveArtifact($smc, 'spectre_meltdown_report');
       if ($saved) print_msg(sprintf('Saved %s successfully', basename($smc)), isset($args['verbose']), __FILE__, __LINE__);
       else if ($saved === NULL) print_msg(sprintf('Unable to save %s', basename($smc)), isset($args['verbose']), __FILE__, __LINE__, TRUE);
