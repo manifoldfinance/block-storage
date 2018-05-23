@@ -22,7 +22,7 @@ Conducts block storage testing based on the SNIA Solid State Storage (SSS)
 Performance Test Specification (PTS) Enterprise v1.1. More information about
 this specification is available here:
 
-http://snia.org/sites/default/files/SSS_PTS_Enterprise_v1.1.pdf
+https://www.snia.org/sites/default/files/SSS_PTS_Enterprise_v1.1.pdf
 
 The SNIA test specification allows for some user configurable parameters. 
 Additionally, this script allows for some specification parameters to be 

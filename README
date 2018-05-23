@@ -6,7 +6,7 @@ generators for reporting to replicate the SNIA Solid State Storage
 includes 8 test each measuring different block storage performance 
 characteristics. The specification is available here:
 
-http://snia.org/sites/default/files/SSS_PTS_Enterprise_v1.1.pdf
+https://www.snia.org/sites/default/files/SSS_PTS_Enterprise_v1.1.pdf
 
 This benchmark suite uses gnuplot and wkhtmltopdf to generate test reports 
 based on the SNIA specification. An example report is available here:
