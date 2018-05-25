@@ -341,10 +341,14 @@ abstract class BlockStorageTest {
       $cmd .= ' --name=global';
       foreach($options as $opt => $val) $cmd .= sprintf(' --%s%s', $opt, $val !== FALSE && $val !== NULL ? '=' . $val : '');
       foreach($jtargets as $i => $jtarget) $cmd .= sprintf(' --name=%s-%d --filename=%s', $jname, $i+1, $jtarget);
-      print_msg(sprintf('Starting fio using command: %s', $cmd), $this->verbose, __FILE__, __LINE__);
+      // Limit fio runtime to 2x designated time based jobs
+      $timeout = isset($options['time_based']) && isset($options['runtime']) && $options['runtime'] > 0 ? $options['runtime']*2 : NULL;
+      print_msg(sprintf('Starting fio using command: %s%s', $timeout ? 'timeout ' . $timeout . ' ' : '', $cmd), $this->verbose, __FILE__, __LINE__);
       $start = time();
       $started = date('Y-m-d H:i:s');
-      if ($result = json_decode(trim(shell_exec($cmd . ' 2>/dev/null')), TRUE)) {
+      $output = trim(shell_exec(sprintf('%s%s 2>/dev/null', $timeout ? 'timeout ' . $timeout . ' ' : '', $cmd)));
+      if ($timeout && preg_match('/fio:\s+terminat/', $output)) print_msg(sprintf('WARNING: fio terminated by %d sec timeout', $timeout), $this->verbose, __FILE__, __LINE__);
+      if ($output && strpos($output, '{') !== FALSE && ($result = json_decode(substr($output, strpos($output, '{')), TRUE))) {
         $iops = NULL;
         if ($success = isset($result['jobs'][0]['error']) && !$result['jobs'][0]['error']) {
           $iops = (isset($result['jobs'][0]['read']['iops']) ? $result['jobs'][0]['read']['iops'] : 0) + (isset($result['jobs'][0]['write']['iops']) ? $result['jobs'][0]['write']['iops'] : 0);
@@ -1805,7 +1809,7 @@ abstract class BlockStorageTest {
    * @return array
    */
   public static function validateDependencies($options) {
-    $dependencies = array('fio' => 'fio');
+    $dependencies = array('fio' => 'fio', 'timeout' => 'timeout');
     // reporting dependencies
     if (!isset($options['noreport']) || !$options['noreport']) {
       $dependencies['gnuplot'] = 'gnuplot';

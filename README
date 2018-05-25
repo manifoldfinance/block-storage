@@ -501,6 +501,8 @@ This benchmark suite uses the following packages:
               are used in the PDF report
   hdparm      Used for ATA secure erase (when supported)
   php-cli     Test automation scripts (/usr/bin/php)
+  timeout     Used to limit fio runtime when applicable to avoid stuck fio 
+              processes
   util-linux  For TRIM operations using `blkdiscard` and `fstrim` (when 
               supported). Not required if test targets are rotational
   wkhtmltopdf Generates PDF version of report - download from 
