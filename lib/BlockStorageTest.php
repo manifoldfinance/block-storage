@@ -1934,7 +1934,7 @@ abstract class BlockStorageTest {
       $this->skipWipc = TRUE;
     }
     if (!$noprecondition) {
-      print_msg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). %s', $this->options['precondition_passes'], $this->options['precondition_time'] ? 'Preconditioning passes will be fixed ruation of ' . $this->options['precondition_time'] . ' secs' : 'This may take a while...'), $this->verbose, __FILE__, __LINE__);
+      print_msg(sprintf('Attempting workload independent preconditioning (%dX 128k sequential writes on entire device). %s', $this->options['precondition_passes'], $this->options['precondition_time'] ? 'Preconditioning passes will be fixed duration of ' . $this->options['precondition_time'] . ' secs' : 'This may take a while...'), $this->verbose, __FILE__, __LINE__);
       for($i=1; $i<=$this->options['precondition_passes']; $i++) {
         
         $opts = array('blocksize' => $bs, 'rw' => 'write', 'numjobs' => 1);
