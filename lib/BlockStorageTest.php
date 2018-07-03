@@ -348,7 +348,7 @@ abstract class BlockStorageTest {
       $start = time();
       $started = date('Y-m-d H:i:s');
       $output = trim(shell_exec(sprintf('%s%s 2>/dev/null', $timeoutCmd, $cmd)));
-      if ($timeout && preg_match('/fio:\s+terminat/', $output)) print_msg(sprintf('WARNING: fio terminated by %d sec timeout', $timeout), $this->verbose, __FILE__, __LINE__);
+      if ($timeout && (preg_match('/fio:\s+terminat/', $output) || preg_match('/killed/', $output))) print_msg(sprintf('WARNING: fio terminated by %d sec timeout', $timeout), $this->verbose, __FILE__, __LINE__);
       if ($output && strpos($output, '{') !== FALSE && ($result = json_decode(substr($output, strpos($output, '{')), TRUE))) {
         $iops = NULL;
         if ($success = isset($result['jobs'][0]['error']) && !$result['jobs'][0]['error']) {
