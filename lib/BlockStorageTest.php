@@ -343,10 +343,11 @@ abstract class BlockStorageTest {
       foreach($jtargets as $i => $jtarget) $cmd .= sprintf(' --name=%s-%d --filename=%s', $jname, $i+1, $jtarget);
       // Limit fio runtime to 2x designated time based jobs
       $timeout = isset($options['time_based']) && isset($options['runtime']) && $options['runtime'] > 0 ? round($options['runtime']*1.5) : NULL;
-      print_msg(sprintf('Starting fio using command: %s%s', $timeout ? 'timeout -s SIGKILL ' . $timeout . ' ' : '', $cmd), $this->verbose, __FILE__, __LINE__);
+      $timeoutCmd = $timeout ? sprintf('timeout -s SIGKILL %d timeout %d ', $options['runtime']*2, $timeout) : '';
+      print_msg(sprintf('Starting fio using command: %s%s', $timeoutCmd, $cmd), $this->verbose, __FILE__, __LINE__);
       $start = time();
       $started = date('Y-m-d H:i:s');
-      $output = trim(shell_exec(sprintf('%s%s 2>/dev/null', $timeout ? 'timeout -s SIGKILL ' . $timeout . ' ' : '', $cmd)));
+      $output = trim(shell_exec(sprintf('%s%s 2>/dev/null', $timeoutCmd, $cmd)));
       if ($timeout && preg_match('/fio:\s+terminat/', $output)) print_msg(sprintf('WARNING: fio terminated by %d sec timeout', $timeout), $this->verbose, __FILE__, __LINE__);
       if ($output && strpos($output, '{') !== FALSE && ($result = json_decode(substr($output, strpos($output, '{')), TRUE))) {
         $iops = NULL;
