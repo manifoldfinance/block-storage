@@ -343,7 +343,7 @@ abstract class BlockStorageTest {
       foreach($jtargets as $i => $jtarget) $cmd .= sprintf(' --name=%s-%d --filename=%s', $jname, $i+1, $jtarget);
       // Limit fio runtime to 2x designated time based jobs
       $timeout = isset($options['time_based']) && isset($options['runtime']) && $options['runtime'] > 0 ? round($options['runtime']*1.5) : NULL;
-      $timeoutCmd = $timeout ? sprintf('timeout -k %d %d ', $options['runtime']*2, $timeout) : '';
+      $timeoutCmd = $timeout ? sprintf('timeout -k %d %d ', round($options['runtime']/2), $timeout) : '';
       print_msg(sprintf('Starting fio using command: %s%s', $timeoutCmd, $cmd), $this->verbose, __FILE__, __LINE__);
       $start = time();
       $started = date('Y-m-d H:i:s');
