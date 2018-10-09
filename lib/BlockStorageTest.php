@@ -1710,6 +1710,7 @@ abstract class BlockStorageTest {
         $purged = FALSE;
         $volume = self::getVolume($target);
         $rotational = self::isRotational($target);
+        $bsd = (preg_match('/[Bb][Ss][Dd]/', shell_exec('uname -s')));
         print_msg(sprintf('Attempting to purge %srotational target %s with --nosecureerase=%d; --notrim=%d; --nozerofill=%d', $rotational ? '' : 'non-', $target, $nosecureerase ? '1' : '0', $notrim ? '1' : '0', $nozerofill ? '1' : '0'), $this->verbose, __FILE__, __LINE__);
         // try ATA secure erase
         if ($this->deviceTargets && !$nosecureerase) {
@@ -1739,6 +1740,20 @@ abstract class BlockStorageTest {
           }
         }
         else if (!$purged) print_msg(sprintf('TRIM not attempted for target %s because %s', $target, $notrim ? '--notrim argument was specified' : 'device is rotational'), $this->verbose, __FILE__, __LINE__);
+	
+	// next try sanitize 
+        if (!$purged && !$nosanitize && $bsd ) {
+          $cmd = sprintf("camcontrol sanitize %s -y -a block", $target);
+          print_msg(sprintf('Attempting Sanitize for volume %s using command %s', $volume, $cmd), $this->verbose, __FILE__, __LINE__);
+          $ecode = trim(exec($cmd));
+          if ($ecode > 0) print_msg(sprintf('Sanitize not supported or failed for target %s (exit code %d)', $target, $ecode), $this->verbose, __FILE__, __LINE__);
+          else {
+            print_msg(sprintf('Sanitize successful for target %s', $target), $this->verbose, __FILE__, __LINE__);
+            $this->purgeMethods[$target] = 'sanitize';
+            $purged = TRUE;
+          }
+        }
+        else if (!$purged) print_msg(sprintf('Sanitize not attempted for target %s because %s', $target, $nosanitize ? '--nosanitize argument was specified' : 'Not implemented on this OS'), $this->verbose, __FILE__, __LINE__);
         
         // finally try zero filling
         if (!$purged && !$nozerofill && (!$nozerofillNonRotational || $rotational)) {
