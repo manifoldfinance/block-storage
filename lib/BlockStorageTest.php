@@ -1101,25 +1101,23 @@ abstract class BlockStorageTest {
     
     print_msg("test", $verbose, __FILE__, __LINE__);
     if ($device == $target) {
-      if  (preg_match('/[Bb][Ss][Dd]/', shell_exec('uname -s'))) {
-        $freeSpace = shell_exec(($cmd = sprintf('diskinfo -v  %s |grep bytes |cut -w -f 2', $target)))*1 ;
+      if (preg_match('/[Bb][Ss][Dd]/', shell_exec('uname -s'))) {
+        $freeSpace = shell_exec(($cmd = sprintf('diskinfo -v %s | grep bytes | cut -w -f 2', $target)))*1;
       }
-      else {
-        $pieces = explode("\n", trim(shell_exec($cmd = sprintf('lsblk -n -o size -b %s', $target))));
-      }
-      if (isset($pieces[0]) && is_numeric($pieces[0])) {
+      else if (($pieces = explode("\n", trim(shell_exec($cmd = sprintf('lsblk -n -o size -b %s', $target))))) && isset($pieces[0]) && is_numeric($pieces[0])) {
         $freeSpace = $pieces[0]*1;
       }
+      if ($freeSpace && !$bytes) $freeSpace = round($freeSpace/1048576);
     }
     else {
       $df = self::df($target, array('B' => 'M'));
       if (is_numeric($freeSpace = $df && isset($df['avail']) ? substr($df['avail'], 0, -1)*1 : NULL)) {
         if (file_exists($file = sprintf('%s/%s', $target, self::BLOCK_STORAGE_TEST_FILE_NAME))) $freeSpace += round((filesize($file)/1024)/1024);
+        if ($bytes) $freeSpace *= 1048576; 
       }
     }
-
-    if ($bytes) $freeSpace /= 1048576; 
-    if ($freeSpace) print_msg(sprintf('Target %s has %s MB free space', $target, $bytes ? $freeSpace: round($freeSpace/1048576)), $verbose, __FILE__, __LINE__);
+    
+    if ($freeSpace) print_msg(sprintf('Target %s has %s MB free space', $target, $bytes ? round($freeSpace/1048576) : $freeSpace), $verbose, __FILE__, __LINE__);
     else {
       $freeSpace = NULL;
       print_msg(sprintf('Unable to get free space for target %s', $target), $verbose, __FILE__, __LINE__, TRUE);
