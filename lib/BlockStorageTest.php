@@ -1693,6 +1693,7 @@ abstract class BlockStorageTest {
     $purgeCount = 0;
     $nopurge = isset($this->options['nopurge']) && $this->options['nopurge'];
     $nopurgeIgnore = isset($this->options['nopurge_ignore']) && $this->options['nopurge_ignore'];
+    $nosanitize = FALSE;
     $nosecureerase = isset($this->options['nosecureerase']) && $this->options['nosecureerase'];
     $notrim = isset($this->options['notrim']) && $this->options['notrim'];
     $nozerofill = isset($this->options['nozerofill']) && $this->options['nozerofill'];
