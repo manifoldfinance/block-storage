@@ -507,12 +507,16 @@ EXIT CODES:
   1 block storage testing failed
 
 EOF
-  exit
-  which php 2>&1 > /dev/null
-elif which -s  php ; then
-  $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/lib/run.php $@
-  exit $?
+    exit 0
+elif [ -z "$1" ]; then
+    echo "Usage: $0 --help"
+    exit 1
+fi
+
+if [ "$(command -v php)" ];  then
+    $(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/lib/run.php $@
+    exit $?
 else
-  echo "Error: missing dependency php-cli (/usr/bin/php)"
-  exit 1
+    echo "Error: missing dependency php-cli (/usr/bin/php)"
+    exit 1
 fi
