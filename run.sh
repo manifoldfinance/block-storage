@@ -508,9 +508,6 @@ EXIT CODES:
 
 EOF
     exit 0
-elif [ -z "$1" ]; then
-    echo "Usage: $0 --help"
-    exit 1
 fi
 
 if [ "$(command -v php)" ];  then
