@@ -137,6 +137,10 @@ ARGUMENTS:
                             to. Added to saved results. May also be specified 
                             using the environment variable 
                             bm_provider_id
+                            
+--meta_pthroughput          Optional argument designating the amount of 
+                            provisioned throughput (MBps) associated with the 
+                            test volumes
 
 --meta_region               The compute service region this test pertains to. 
                             Used for report headers. May also be specified 

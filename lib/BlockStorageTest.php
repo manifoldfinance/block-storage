@@ -1050,7 +1050,7 @@ abstract class BlockStorageTest {
     $targetDesc = isset($this->options['target_base']) ? $this->options['target_base'] : $this->options['target'];
     if (is_array($targetDesc)) $targetDesc = implode(', ', count($targetDesc) > 8 ? array_merge(array_slice($targetDesc, 0, 4), array('...'), array_slice($targetDesc, -4)) : $targetDesc);
     $params = array(
-      'Storage Config' => $this->options['meta_storage_config'] . (isset($this->options['meta_host_cache']) ? sprintf(' (%s host cache enabled)', $this->options['meta_host_cache']) : '') . (isset($this->options['meta_encryption']) ? ' (w/encryption)' : '') . (isset($this->options['meta_burst']) ? ' (w/burst)' : '') . (isset($this->options['meta_piops']) ? ' (' . $this->options['meta_piops'] . ' PIOPS)' : ''),
+      'Storage Config' => $this->options['meta_storage_config'] . (isset($this->options['meta_host_cache']) ? sprintf(' (%s host cache enabled)', $this->options['meta_host_cache']) : '') . (isset($this->options['meta_encryption']) ? ' (w/encryption)' : '') . (isset($this->options['meta_burst']) ? ' (w/burst)' : '') . (isset($this->options['meta_piops']) ? ' (' . $this->options['meta_piops'] . ' PIOPS)' : '') . (isset($this->options['meta_pthroughput']) ? ' (' . $this->options['meta_piops'] . ' PTHROUGHPUT)' : ''),
       "# ${t}s" => count($this->options['target']),
       "${t}s" => $targetDesc,
       "${t} Capacities" => $capacities,
@@ -1313,6 +1313,7 @@ abstract class BlockStorageTest {
       'meta_piops:',
       'meta_provider:',
       'meta_provider_id:',
+      'meta_pthroughput:',
       'meta_region:',
       'meta_resource_id:',
       'meta_run_id:',
@@ -1893,6 +1894,7 @@ abstract class BlockStorageTest {
       'active_range' => array('min' => 1, 'max' => 100),
       'font_size' => array('min' => 6, 'max' => 64),
       'meta_piops' => array('min' => 1),
+      'meta_pthroughput' => array('min' => 1),
       'oio_per_thread' => array('min' => 1, 'max' => 256),
       'output' => array('write' => TRUE),
       'precondition_passes' => array('min' => 1, 'max' => 5),
