@@ -88,10 +88,11 @@ class BenchmarkArchiverAzure extends BenchmarkArchiver {
   /**
    * saves a file and returns the URL. returns NULL on error
    * @param string $file local path to the file that should be saved
+   * @param string $object optional explicit object path
    * @return string
    */
-  public function save($file) {    
-    $object = $this->getObjectUri($file);
+  public function save($file, $object=NULL) {
+    $object = $object ? $object : $this->getObjectUri($file);
     $url = $this->getUrl($object);
     $headers = array();
     $headers['x-ms-blob-type'] = 'BlockBlob';

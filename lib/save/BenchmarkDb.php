@@ -139,7 +139,7 @@ class BenchmarkDb {
                                 'db_librato_sum_squares:', 'db_librato_type:',
                                 'db_librato_value:',
                                 'db_mysql_engine:', 'db_name:', 
-                                'db_port:', 'db_pswd:', 'db_prefix:', 
+                                'db_port:', 'db_pswd:', 'db_prefix:', 'db_store_path:',
                                 'db_suffix:', 'db_user:', 'output:', 'params_file:', 
                                 'remove:', 'skip_validations', 'store:', 'v' => 'verbose'), 
                           $aparams = array('db_librato_aggregate', 
@@ -204,6 +204,9 @@ class BenchmarkDb {
           break;
         case 'postgresql':
           $impl .= 'PostgreSql';
+          break;
+        case 'store':
+          $impl .= 'Store';
           break;
         default:
           $err = '--db ' . $options['db'] . ' is not valid';
