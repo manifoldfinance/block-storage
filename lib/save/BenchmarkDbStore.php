@@ -40,17 +40,11 @@ class BenchmarkDbStore extends BenchmarkDb {
     $table = $this->getTableName($table);
     $path = $this->options['db_store_path'];
     $prefix = str_replace('{table}', $table, $path);
-    $fileName = sprintf('%s.csv', $table);
-    if (preg_match('/\.csv/i', $prefix)) {
-      $fileName = basename($prefix);
-      $prefix = str_replace('/' . $fileName, '', $prefix);
-      $prefix = str_replace($fileName, '', $prefix);
+    $saveTo = dirname($this->archiver->getObjectUri($csv, $prefix));
+    if (!preg_match('/\.csv$/i', $saveTo)) {
+      $saveTo = sprintf('%s/%s', $saveTo, sprintf('%s.csv', $table));
     }
-    $saveTo = $this->archiver->getObjectUri($csv, $prefix);
-    $baseFileName = basename($saveTo);
-    $saveTo = str_replace('/' . $baseFileName, '/' . $fileName, $saveTo);
-    $saveTo = str_replace($baseFileName, $fileName, $saveTo);
-    return $this->archiver->save($csv, $saveTo);
+    return $this->archiver->save($csv, $saveTo, FALSE);
   }
   
   /**
@@ -61,7 +55,7 @@ class BenchmarkDbStore extends BenchmarkDb {
    */
   protected function validate() {
     if ($valid = parent::validate()) {
-      $valid = isset($this->options['db_store_path']) && $this->archiver && $this->archiver->validate();
+      $valid = isset($this->options['db_store_path']);
     }
     return $valid;
   }

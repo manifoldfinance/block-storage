@@ -89,9 +89,10 @@ class BenchmarkArchiverAzure extends BenchmarkArchiver {
    * saves a file and returns the URL. returns NULL on error
    * @param string $file local path to the file that should be saved
    * @param string $object optional explicit object path
+   * @param boolean $public whether or not to make the object public
    * @return string
    */
-  public function save($file, $object=NULL) {
+  public function save($file, $object=NULL, $public=TRUE) {
     $object = $object ? $object : $this->getObjectUri($file);
     $url = $this->getUrl($object);
     $headers = array();

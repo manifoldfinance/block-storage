@@ -426,7 +426,7 @@ class BenchmarkDb {
       else {
         print_msg(sprintf('Set output directory to %s', $dir), isset($this->options['verbose']), __FILE__, __LINE__);
         $this->valid = TRUE;
-      } 
+      }
     }
     return $this->valid;
   }
@@ -453,13 +453,19 @@ class BenchmarkDb {
         case 'postgresql':
           $dependencies['psql'] = 'postgresql';
           break;
+        case 'store':
+          break;
         default:
-          $err = '--db ' . $options['db'] . ' is not valid';
+          $err = '--db ' . $this->options['db'] . ' is not valid';
           break;
       }
     }
     if ($this->archiver) $dependencies['curl'] = 'curl';
     
+    // invalid --db argument
+    if (isset($err)) {
+      print_msg($err, isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
+    }
     if ($dependencies = validate_dependencies($dependencies)) {
       foreach($dependencies as $dependency) print_msg(sprintf('Missing dependence %s', $dependency), isset($this->options['verbose']), __FILE__, __LINE__, TRUE);
     }
